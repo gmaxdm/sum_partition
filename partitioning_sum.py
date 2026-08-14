@@ -326,7 +326,7 @@ def get_partition_diff_by_term_cnt(s: int, n: int) -> int:
             continue
 
         _cnt, is_stop = get_edge_partitions_by_term_iteration_cnt(s, n, 0, j)
-        _mongo.add_edge(s, n, j, cnt)
+        _mongo.add_edge(s, n, j, _cnt)
         print(f"E({s}, {n}, 0, {j}) = {_cnt}")
         cnt += _cnt
         if is_stop:
