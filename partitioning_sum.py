@@ -123,7 +123,7 @@ def sum_partition_idx_iteration_count(s: int, n: int, term_idx: int, iteration: 
         return 0
 
     print("init part", _init_part)
-    cnt = get_part_cnt(_init_part, s, term_idx, s)
+    cnt = get_part_cnt(_init_part, s, term_idx)
     return cnt
 
 
@@ -278,7 +278,7 @@ def partitioning_try():
 def partitioning_cnt_try():
     init_part = get_init_partition(200, 10, 7, 9)
     print("init:", init_part)
-    cnt = get_part_cnt(init_part, 200, 7, 200)
+    cnt = get_part_cnt(init_part, 200, 7)
     print("Count:", cnt)
 
 
@@ -310,6 +310,7 @@ def get_partition_diff_by_term_cnt(s: int, n: int) -> int:
 
     cnt = mongo.get_diff(s, n)
     if >= 0:
+        print(f"D({s}, {n}) = {cnt} (getting from cache)")
         return cnt
 
     _min, _max = get_term_iteration_interval(s, n, 0)
@@ -318,6 +319,7 @@ def get_partition_diff_by_term_cnt(s: int, n: int) -> int:
         _cnt = mongo.get_edge(s, n, j)
         if >= 0:
             cnt += _cnt
+            print(f"E({s}, {n}, 0, {j}) = {_cnt} (getting from cache)")
             continue
 
         _cnt, is_stop = get_edge_partitions_by_term_iteration_cnt(s, n, 0, j)
@@ -334,6 +336,7 @@ def get_partition_diff_by_term_cnt(s: int, n: int) -> int:
 def calc_sum_partitions_count_by_diff(sum_from: int, sum_to: int, from_cnt: int, n: int) -> int:
     cnt = mongo.get_part(sum_to, n)
     if >= 0:
+        print(f"P({sum_to}, {n}) = {cnt} (getting from cache)")
         return cnt
 
     _min_sum = ap_sum(1, n)
@@ -344,7 +347,7 @@ def calc_sum_partitions_count_by_diff(sum_from: int, sum_to: int, from_cnt: int,
     with Pool(processes=multiprocessing.cpu_count()) as pool:
         for res in pool.starmap(get_partition_diff_by_term_cnt, [(_s, n) for _s in range(sum_from+1, sum_to+1)]):
             cnt += res
-    mongo.add_part(sum_to, n, cnt)
+    mongo.add_part(sum_to, n, 1, cnt)
     print(f"P({sum_to}, {n}) = {cnt}")
     print(f"cnt: {cnt}, fits 4 bytes size ({2**32}): {cnt < 2**32}")
     return cnt

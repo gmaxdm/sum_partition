@@ -2,6 +2,7 @@ import copy
 
 from typing import List, Generator, Tuple
 
+from mongo.client import MongoDBClient as mongo
 from partition_utils import (ap_sum, get_init_partition, get_term_iteration_interval,
                              get_partition_by_term_iteration_ap_min_last,
                              get_partition_by_term_iteration_ap_max_last,
@@ -12,7 +13,7 @@ class SmallLengthPartitionsStopIteration(Exception):
     pass
 
 
-def get_part_cnt(init_part: List[int], s: int, idx: int, last_term_limit: int) -> int:
+def get_part_cnt(init_part: List[int], s: int, idx: int, last_term_limit: int = 0) -> int:
     """
     increment the most right term n-1 (before the result sum term - last),
     when the rule is failed increment n-2 by creating the min partition for this iteration
@@ -23,15 +24,30 @@ def get_part_cnt(init_part: List[int], s: int, idx: int, last_term_limit: int) -
         iteration = 3
         left_part_sum = 3
         get_tail_partition_iteration_cnt(25, 3, 3) = 6
+
+    Caching in part_ceil by (s, n, i, c), where i - iteration = init_part[0], c - ceil = last_term_limit.
     :param init_part: initial partition
     :param s: sum
     :param idx: term_idx from 0 to n-4
     :param last_term_limit: limiter to the last term of the partition that is being generated.
+                            Last term < last_term_limit.
     :return:
     """
     n = len(init_part)
+    if n < 2:
+        raise ValueError("n is too small")
     if idx > n - 4:
         raise ValueError("idx should be less than n-4")
+
+    init_iteration = init_part[0]
+    ceil = last_term_limit
+    if last_term_limit > 0:
+        cnt = mongo.get_part_ceil(s, n, init_iteration, last_term_limit)
+        if cnt >= 0:
+            print(f"P({s}, {n}, {init_iteration}, {last_term_limit}) = {cnt} (getting from cache)")
+            return cnt
+    else:
+        ceil = 1 << 32
 
     part = init_part
     term_idx = n - 4
@@ -48,7 +64,7 @@ def get_part_cnt(init_part: List[int], s: int, idx: int, last_term_limit: int) -
     while True:
         if is_valid:
             _cnt = get_tail_partition_iteration_cnt(s, left_part_sum + part[term_idx], iteration,
-                                                    last_term_limit=last_term_limit)
+                                                    last_term_limit=ceil)
         if _cnt or iteration <= _max:
             # n-3
             cnt += _cnt
@@ -72,6 +88,11 @@ def get_part_cnt(init_part: List[int], s: int, idx: int, last_term_limit: int) -
                 # reset values:
                 is_valid = False
                 _cnt = 0
+
+    if last_term_limit > 0:
+        mongo.add_part_ceil(s, n, init_iteration, last_term_limit, cnt)
+        print(f"P({s}, {n}, {init_iteration}, {last_term_limit}) = {cnt}")
+
     return cnt
 
 

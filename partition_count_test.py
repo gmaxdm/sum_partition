@@ -69,38 +69,38 @@ def test_gen_next_part_last_term_limit():
 
 def test_get_part_cnt():
     init_part = [1, 2, 3, 4, 15]
-    cnt = get_part_cnt(init_part, 25, 0, 25)
+    cnt = get_part_cnt(init_part, 25, 0)
     assert cnt == 30
 
     init_part = [1, 3, 4, 5, 12]
-    cnt = get_part_cnt(init_part, 25, 1, 25)
+    cnt = get_part_cnt(init_part, 25, 1)
     assert cnt == 9
 
     init_part = [1, 2, 4, 5, 9]
     with pytest.raises(ValueError):
         # idx should be less than n-4
-        _ = get_part_cnt(init_part, 21, 2, 21)
+        _ = get_part_cnt(init_part, 21, 2)
 
     init_part = [1, 2, 3, 4, 90]
-    cnt = get_part_cnt(init_part, 100, 0, 100)
+    cnt = get_part_cnt(init_part, 100, 0)
     assert cnt == 25337
 
     init_part = [1, 2, 3, 4, 191]
-    cnt = get_part_cnt(init_part, 201, 0, 201)
+    cnt = get_part_cnt(init_part, 201, 0)
     assert cnt == 486424
 
     init_part = [1, 2, 3, 4, 5, 6, 29]
-    cnt = get_part_cnt(init_part, 50, 0, 50)
+    cnt = get_part_cnt(init_part, 50, 0)
     assert cnt == 522
 
     init_part = [1, 2, 3, 94]
-    cnt = get_part_cnt(init_part, 100, 0, 100)
+    cnt = get_part_cnt(init_part, 100, 0)
     assert cnt == 5952
 
 
 def test_get_part_cnt_last_term_limit():
     init_part = [1, 2, 3, 4, 15]
-    cnt = get_part_cnt(init_part, 25, 0, 9)
+    cnt = get_part_cnt(init_part, 25, 0)
     assert cnt == 5
 
 
