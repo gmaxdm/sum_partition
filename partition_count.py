@@ -1,6 +1,6 @@
 import copy
 
-from typing import List, Generator
+from typing import List, Generator, Tuple
 
 from partition_utils import (ap_sum, get_init_partition, get_term_iteration_interval,
                              get_partition_by_term_iteration_ap_min_last,
@@ -194,7 +194,7 @@ def gen_next_part_old(init_part: List[int], s: int, idx: int, last_term_limit: i
                 if term_idx < idx:
                     break
 
-def gen_next_part(init_part: List[int], s: int, idx: int, last_term_limit: int) -> Generator[List[int]]:
+def gen_next_part(init_part: List[int], s: int, idx: int, last_term_limit: int) -> Generator:
     """
     Generating partitions by the method:
     increment the most right term n-1 (before the result sum term - last),
@@ -282,7 +282,7 @@ def gen_next_part_error(init_part: List[int], idx: int, s: int) -> Generator:
                 break
 
 
-def gen_edge_partitions_by_term_iteration(s: int, n: int, term_idx: int, iteration: int) -> Generator[List[int]]:
+def gen_edge_partitions_by_term_iteration(s: int, n: int, term_idx: int, iteration: int) -> Generator:
     """
     edge partition: p[-1] - p[-2] == 1
     :param s:
@@ -430,3 +430,23 @@ def get_edge_partitions_by_term_iteration_cnt(s: int, n: int, term_idx: int, ite
         _sum -= 1
 
     return cnt
+
+
+def get_edge_partitions_by_term_iteration_cnt(s: int, n: int, term_idx: int, iteration: int) -> Tuple[int, bool]:
+    """
+    "E({s}, {n}, {term_idx}, {iteration}) = {cnt}"
+    :param s:
+    :param n:
+    :param term_idx:
+    :param iteration:
+    :return:
+    """
+    _cnt = 0
+    is_stop = False
+    try:
+        _cnt = _get_edge_partitions_by_term_iteration_cnt(s, n, term_idx, iteration)
+    except SmallLengthPartitionsStopIteration as e:
+        _cnt = e.args[0]
+        is_stop = True
+    return _cnt, is_stop
+

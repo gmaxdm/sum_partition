@@ -115,18 +115,10 @@ def test_gen_edge_partitions_by_term_iteration():
 
 
 def test_get_edge_partitions_by_term_iteration_cnt():
-    cnt = 0
-    try:
-        cnt = get_edge_partitions_by_term_iteration_cnt(21, 5, 0, 1)
-    except SmallLengthPartitionsStopIteration as e:
-        cnt += e.args[0]
+    cnt, _ = get_edge_partitions_by_term_iteration_cnt(21, 5, 0, 1)
     assert cnt == 3
 
-    cnt = 0
-    try:
-        cnt = get_edge_partitions_by_term_iteration_cnt(201, 5, 0, 1)
-    except SmallLengthPartitionsStopIteration as e:
-        cnt += e.args[0]
+    cnt, _ = get_edge_partitions_by_term_iteration_cnt(201, 5, 0, 1)
     assert cnt == 9987
 
 
@@ -139,17 +131,14 @@ def test_get_edge_partitions_by_term_iteration_cnt_diff():
     n = 7
     _min, _max = get_term_iteration_interval(s, n, 0)
     for j in range(_min, _max):
-        try:
-            cnt += get_edge_partitions_by_term_iteration_cnt(s, n, 0, j)
-        except SmallLengthPartitionsStopIteration as e:
-            cnt += e.args[0]
+        _cnt, is_stop = get_edge_partitions_by_term_iteration_cnt(s, n, 0, j)
+        cnt += _cnt
+        if is_stop:
+            break
     assert cnt == _diff  # 86
 
 
 def test_get_edge_partitions_by_term_iteration_cnt_play():
-    cnt = 0
-    try:
-        cnt = get_edge_partitions_by_term_iteration_cnt(500, 20, 0, 1)
-    except SmallLengthPartitionsStopIteration as e:
-        cnt += e.args[0]
+    cnt, _ = get_edge_partitions_by_term_iteration_cnt(500, 20, 0, 1)
     assert cnt == 9987
+

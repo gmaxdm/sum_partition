@@ -13,6 +13,7 @@ import time
 from typing import List
 from multiprocessing import Pool
 
+from mongo.client import MongoDBClient as mongo
 from partition_count import (get_part_cnt, gen_next_part,
                              gen_edge_partitions_by_term_iteration,
                              get_edge_partitions_by_term_iteration_cnt,
@@ -281,14 +282,6 @@ def partitioning_cnt_try():
     print("Count:", cnt)
 
 
-def sum_partition_count(s: int, n: int, term_idx: int, iteration: int) -> int:
-    _cnt = 0
-    init_part = get_init_partition(s, n, term_idx, iteration)
-    for _ in gen_next_part(init_part, s, term_idx, s):
-        _cnt += 1
-    return _cnt
-
-
 def save_sum_partitions(s: int, n: int, save_csv: bool=False):
     parts = sum_partitioning(s, n)
     #print(parts)
@@ -315,18 +308,34 @@ def get_partition_diff_by_term_cnt(s: int, n: int) -> int:
     if n < 3:
         return cnt
 
+    cnt = mongo.get_diff(s, n)
+    if >= 0:
+        return cnt
+
     _min, _max = get_term_iteration_interval(s, n, 0)
+    print(f"s: {s}, n: {n}, min: {_min}, max: {_max}")
     for j in range(_min, _max + 1):
-        try:
-            print(f"sum: {s}, n: {n}, j: {j}")
-            cnt += get_edge_partitions_by_term_iteration_cnt(s, n, 0, j)
-        except SmallLengthPartitionsStopIteration as e:
-            cnt += e.args[0]
+        _cnt = mongo.get_edge(s, n, j)
+        if >= 0:
+            cnt += _cnt
+            continue
+
+        _cnt, is_stop = get_edge_partitions_by_term_iteration_cnt(s, n, 0, j)
+        mongo.add_edge(s, n, j, cnt)
+        print(f"E({s}, {n}, 0, {j}) = {_cnt}")
+        cnt += _cnt
+        if is_stop:
             break
+    mongo.add_diff(s, n, cnt)
+    print(f"D({s}, {n}) = {cnt}")
     return cnt
 
 
 def calc_sum_partitions_count_by_diff(sum_from: int, sum_to: int, from_cnt: int, n: int) -> int:
+    cnt = mongo.get_part(sum_to, n)
+    if >= 0:
+        return cnt
+
     _min_sum = ap_sum(1, n)
     cnt = from_cnt
     if sum_from < _min_sum:
@@ -335,8 +344,18 @@ def calc_sum_partitions_count_by_diff(sum_from: int, sum_to: int, from_cnt: int,
     with Pool(processes=multiprocessing.cpu_count()) as pool:
         for res in pool.starmap(get_partition_diff_by_term_cnt, [(_s, n) for _s in range(sum_from+1, sum_to+1)]):
             cnt += res
+    mongo.add_part(sum_to, n, cnt)
+    print(f"P({sum_to}, {n}) = {cnt}")
     print(f"cnt: {cnt}, fits 4 bytes size ({2**32}): {cnt < 2**32}")
     return cnt
+
+
+def sum_partition_count(s: int, n: int, term_idx: int, iteration: int) -> int:
+    _cnt = 0
+    init_part = get_init_partition(s, n, term_idx, iteration)
+    for _ in gen_next_part(init_part, s, term_idx, s):
+        _cnt += 1
+    return _cnt
 
 
 def calc_sum_partition_count_by_formula(s: int, n: int) -> int:
@@ -371,18 +390,20 @@ def partition_index():
 
 
 def main():
-    data = gen_bytes(NUM_LEN)
-    print(f"Message size: {(len(data) / 1024):.2f} KB")
-
-    layers = split_by_layers(data)
-    print_layers_stat(layers)
-
     start_time = time.perf_counter()
+
+    print("calc_sum_partitions_count_by_diff(300, 500, 6194373023, 10)")
+    cnt = calc_sum_partitions_count_by_diff(300, 500, 6194373023, 10)
+    if cnt == 886831799718:
+        print("test has passed OK")
+    else:
+        print(f"test failed: 886831799718 (expected) != {cnt} (actual)")
+
     #run_compressions(layers[0])
     #compression_try()
     #partitioning_try()
     #partitioning_cnt_try()
-    sum_partition_cnt(500, 20)
+    #sum_partition_cnt(500, 20)
     #save_sum_partitions(1000, 10, save_csv=False)
     #save_sum_partitions_diff(5001, 10, save_csv=False)
 
@@ -401,3 +422,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
