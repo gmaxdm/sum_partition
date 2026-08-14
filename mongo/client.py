@@ -16,25 +16,25 @@ class MongoDB:
         res = self._db.part.find_one({"s": s, "n": n})
         if res:
             return res["cnt"]
-        return -1
+        return 0
 
     def get_part_ceil(self, s: int, n: int, iteration: int, ceil: int) -> int:
         res = self._db.part_ceil.find_one({"s": s, "n": n, "i": iteration, "c": ceil})
         if res:
             return res["cnt"]
-        return -1
+        return 0
 
     def get_diff(self, s: int, n: int) -> int:
         res = self._db.diff.find_one({"s": s, "n": n})
         if res:
             return res["cnt"]
-        return -1
+        return 0
 
     def get_edge(self, s: int, n: int, iteration: int) -> int:
         res = self._db.edge.find_one({"s": s, "n": n, "i": iteration})
         if res:
             return res["cnt"]
-        return -1
+        return 0
 
     def add_part(self, s: int, n: int, iteration: int, cnt: int):
         """
@@ -66,5 +66,17 @@ class MongoDB:
         self._db.edge.insert_one({"s": s, "n": n, "i": iteration, "cnt": cnt})
 
 
-MongoDBClient = MongoDB()
+MongoClient = None
+
+
+def init_mongo():
+    global MongoClient
+    MongoClient = MongoDB()
+
+
+def get_client() -> MongoDB:
+    global MongoClient
+    if MongoClient is None:
+        MongoClient = MongoDB()
+    return MongoClient
 

@@ -2,7 +2,7 @@ import copy
 
 from typing import List, Generator, Tuple
 
-from mongo.client import MongoDBClient as mongo
+from mongo.client import get_client
 from partition_utils import (ap_sum, get_init_partition, get_term_iteration_interval,
                              get_partition_by_term_iteration_ap_min_last,
                              get_partition_by_term_iteration_ap_max_last,
@@ -39,11 +39,13 @@ def get_part_cnt(init_part: List[int], s: int, idx: int, last_term_limit: int = 
     if idx > n - 4:
         raise ValueError("idx should be less than n-4")
 
+    _mongo = get_client()
+
     init_iteration = init_part[0]
     ceil = last_term_limit
     if last_term_limit > 0:
-        cnt = mongo.get_part_ceil(s, n, init_iteration, last_term_limit)
-        if cnt >= 0:
+        cnt = _mongo.get_part_ceil(s, n, init_iteration, last_term_limit)
+        if cnt:
             print(f"P({s}, {n}, {init_iteration}, {last_term_limit}) = {cnt} (getting from cache)")
             return cnt
     else:
@@ -90,7 +92,7 @@ def get_part_cnt(init_part: List[int], s: int, idx: int, last_term_limit: int = 
                 _cnt = 0
 
     if last_term_limit > 0:
-        mongo.add_part_ceil(s, n, init_iteration, last_term_limit, cnt)
+        _mongo.add_part_ceil(s, n, init_iteration, last_term_limit, cnt)
         print(f"P({s}, {n}, {init_iteration}, {last_term_limit}) = {cnt}")
 
     return cnt
@@ -387,7 +389,7 @@ def gen_edge_partitions_by_term_iteration(s: int, n: int, term_idx: int, iterati
         _sum -= 1
 
 
-def get_edge_partitions_by_term_iteration_cnt(s: int, n: int, term_idx: int, iteration: int) -> int:
+def _get_edge_partitions_by_term_iteration_cnt(s: int, n: int, term_idx: int, iteration: int) -> int:
     """
     edge partition: p[-1] - p[-2] == 1
     :param s:

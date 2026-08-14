@@ -100,7 +100,7 @@ def test_get_part_cnt():
 
 def test_get_part_cnt_last_term_limit():
     init_part = [1, 2, 3, 4, 15]
-    cnt = get_part_cnt(init_part, 25, 0)
+    cnt = get_part_cnt(init_part, 25, 0, 9)
     assert cnt == 5
 
 
