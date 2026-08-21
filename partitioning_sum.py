@@ -9,6 +9,7 @@
 """
 import multiprocessing
 import time
+import logging
 
 from typing import List
 from multiprocessing import Pool
@@ -23,6 +24,11 @@ from partition_utils import (ap_sum, get_ap_left_part_sum, get_term_iteration_in
 from compression_utils import (gen_ordered_numbers, compress_layer, gen_bytes, split_by_layers,
                                print_layers_stat, NUM_LEN)
 from utils import save_to_csv
+from logger.logger import setup_logging
+
+
+setup_logging(path='logger.yaml')
+logger = logging.getLogger('partition')
 
 
 class Solution:
@@ -67,13 +73,13 @@ def sum_partitioning(s: int, n: int) -> List[List[int]]:
     start_time = time.perf_counter()
     partitionings = _run_serial(s, n)
     end_time = time.perf_counter()
-    print(f"[SERIAL] Execution time: {end_time - start_time:.6f} seconds")
+    logger.info(f"[SERIAL] Execution time: {end_time - start_time:.6f} seconds")
     _l1 = len(partitionings)
 
     start_time = time.perf_counter()
     partitionings = _run_in_pool(s, n)
     end_time = time.perf_counter()
-    print(f"[POOL] Execution time: {end_time - start_time:.6f} seconds")
+    logger.info(f"[POOL] Execution time: {end_time - start_time:.6f} seconds")
     _l2 = len(partitionings)
     assert _l1 == _l2
     return partitionings
@@ -91,7 +97,7 @@ def sum_partition_idx(s: int, n: int, term_idx: int, iteration: int) -> List[Lis
     return parts
 
 def _run_in_pool(s:int, n: int) -> List[List[int]]:
-    print("cpu count:", multiprocessing.cpu_count())
+    logger.info("cpu count:", multiprocessing.cpu_count())
 
     _args = []
     for i in range(n - 3):
@@ -116,13 +122,13 @@ def _run_serial(s:int, n: int) -> List[List[int]]:
 
 
 def sum_partition_idx_iteration_count(s: int, n: int, term_idx: int, iteration: int) -> int:
-    print(f"s: {s}, n: {n}, term_idx: {term_idx}, iteration: {iteration}")
+    logger.info(f"s: {s}, n: {n}, term_idx: {term_idx}, iteration: {iteration}")
     try:
         _init_part = get_init_partition(s, n, term_idx, iteration)
     except ValueError:
         return 0
 
-    print("init part", _init_part)
+    logger.info("init part", _init_part)
     cnt = get_part_cnt(_init_part, s, term_idx)
     return cnt
 
@@ -136,7 +142,7 @@ def sum_partition_cnt(s: int, n: int) -> int:
     :param n:
     :return:
     """
-    print("cpu count:", multiprocessing.cpu_count())
+    logger.info("cpu count:", multiprocessing.cpu_count())
 
     _args = []
     for i in range(n - 3):
@@ -146,11 +152,11 @@ def sum_partition_cnt(s: int, n: int) -> int:
     with Pool(processes=multiprocessing.cpu_count()) as pool:
         for res in pool.starmap(sum_partition_idx_iteration_count, _args):
             cnt += res
-    print(cnt)
+    logger.info(cnt)
     # for term_idx == n-3 we need to have iteration i
     parts = sum_partition_idx(s, n, n - 3, n - 2)
     cnt += len(parts)
-    print(cnt)
+    logger.info(cnt)
     return cnt
 
 
@@ -221,12 +227,12 @@ def get_partition_diff_by_searching(s: int, n: int) -> List[List[int]]:
     start_time = time.perf_counter()
     parts = _run_diff_serial(s, n)
     end_time = time.perf_counter()
-    print(f"[SERIAL] Execution time: {end_time - start_time:.6f} seconds")
+    logger.info(f"[SERIAL] Execution time: {end_time - start_time:.6f} seconds")
 
     #start_time = time.perf_counter()
     #parts = _run_diff_in_pool(s, n)
     #end_time = time.perf_counter()
-    #print(f"[POOL] Execution time: {end_time - start_time:.6f} seconds")
+    #logger.info(f"[POOL] Execution time: {end_time - start_time:.6f} seconds")
     return parts
 
 
@@ -239,7 +245,7 @@ def calc_sum_gen_partitions_count_by_diff(sum_from: int, sum_to: int, from_cnt: 
     with Pool(processes=multiprocessing.cpu_count()) as pool:
         for res in pool.starmap(_run_diff_serial, [(_s, n) for _s in range(sum_from+1, sum_to+1)]):
             cnt += len(res)
-    print(f"cnt: {cnt}, fits 4 bytes size ({2**32}): {cnt < 2**32}")
+    logger.info(f"cnt: {cnt}, fits 4 bytes size ({2**32}): {cnt < 2**32}")
     return cnt
 
 
@@ -247,52 +253,52 @@ def run_compressions():
     nums = gen_ordered_numbers(NUM_LEN)
     zlib_compressed = compress_layer(nums, "ZLIB")
     ratio = len(zlib_compressed) / len(nums)
-    print("zlib", ratio)
+    logger.info("zlib", ratio)
 
     lzma_compressed = compress_layer(nums, "LZMA")
     ratio = len(lzma_compressed) / len(nums)
-    print("lzma", ratio)
+    logger.info("lzma", ratio)
 
 
 def compression_try(ordered_nums: List[int]):
-    print("len", len(ordered_nums))
+    logger.info("len", len(ordered_nums))
     zlib_compressed = compress_layer(ordered_nums, "ZLIB")
     ratio = len(zlib_compressed) / len(ordered_nums)
-    print("zlib", ratio)
+    logger.info("zlib", ratio)
 
     lzma_compressed = compress_layer(ordered_nums, "LZMA")
     ratio = len(lzma_compressed) / len(ordered_nums)
-    print("lzma", ratio)
+    logger.info("lzma", ratio)
 
 
 def partitioning_try():
     _cnt = 0
     init_part = get_init_partition(500, 10, 7, 8)
-    print("init:", init_part)
+    logger.info("init:", init_part)
     for part in gen_next_part(init_part, 500, 7, 500):
         _cnt += 1
-        #print(part)
-    print("Count:", _cnt)
+        #logger.info(part)
+    logger.info("Count:", _cnt)
 
 
 def partitioning_cnt_try():
     init_part = get_init_partition(200, 10, 7, 9)
-    print("init:", init_part)
+    logger.info("init:", init_part)
     cnt = get_part_cnt(init_part, 200, 7)
-    print("Count:", cnt)
+    logger.info("Count:", cnt)
 
 
 def save_sum_partitions(s: int, n: int, save_csv: bool=False):
     parts = sum_partitioning(s, n)
-    #print(parts)
-    print("count:", len(parts))
+    #logger.info(parts)
+    logger.info("count:", len(parts))
     if save_csv:
         save_to_csv(f"sum_partition/csv/{s}_{n}.csv", parts)
 
 def save_sum_partitions_diff(s: int, n: int, save_csv: bool=False):
     parts = get_partition_diff_by_searching(s, n)
-    #print(parts)
-    print("count:", len(parts))
+    #logger.info(parts)
+    logger.info("count:", len(parts))
     if save_csv:
         save_to_csv(f"sum_partition/csv/{s}_{n}_diff.csv", parts)
 
@@ -312,27 +318,27 @@ def get_partition_diff_by_term_cnt(s: int, n: int) -> int:
 
     cnt = _mongo.get_diff(s, n)
     if cnt:
-        print(f"D({s}, {n}) = {cnt} (getting from cache)")
+        logger.info(f"D({s}, {n}) = {cnt} (getting from cache)")
         return cnt
 
     cnt = 0
     _min, _max = get_term_iteration_interval(s, n, 0)
-    print(f"s: {s}, n: {n}, min: {_min}, max: {_max}")
+    logger.info(f"s: {s}, n: {n}, min: {_min}, max: {_max}")
     for j in range(_min, _max + 1):
         _cnt = _mongo.get_edge(s, n, j)
         if _cnt:
             cnt += _cnt
-            print(f"E({s}, {n}, 0, {j}) = {_cnt} (getting from cache)")
+            logger.info(f"E({s}, {n}, 0, {j}) = {_cnt} (getting from cache)")
             continue
 
         _cnt, is_stop = get_edge_partitions_by_term_iteration_cnt(s, n, 0, j)
         _mongo.add_edge(s, n, j, _cnt)
-        print(f"E({s}, {n}, 0, {j}) = {_cnt}")
+        logger.info(f"E({s}, {n}, 0, {j}) = {_cnt}")
         cnt += _cnt
         if is_stop:
             break
     _mongo.add_diff(s, n, cnt)
-    print(f"D({s}, {n}) = {cnt}")
+    logger.info(f"D({s}, {n}) = {cnt}")
     return cnt
 
 
@@ -340,7 +346,7 @@ def calc_sum_partitions_count_by_diff(sum_from: int, sum_to: int, from_cnt: int,
     _mongo = get_client()
     cnt = _mongo.get_part(sum_to, n)
     if cnt:
-        print(f"P({sum_to}, {n}) = {cnt} (getting from cache)")
+        logger.info(f"P({sum_to}, {n}) = {cnt} (getting from cache)")
         return cnt
 
     _min_sum = ap_sum(1, n)
@@ -352,8 +358,8 @@ def calc_sum_partitions_count_by_diff(sum_from: int, sum_to: int, from_cnt: int,
         for res in pool.starmap(get_partition_diff_by_term_cnt, [(_s, n) for _s in range(sum_from+1, sum_to+1)]):
             cnt += res
     _mongo.add_part(sum_to, n, 1, cnt)
-    print(f"P({sum_to}, {n}) = {cnt}")
-    print(f"cnt: {cnt}, fits 4 bytes size ({2**32}): {cnt < 2**32}")
+    logger.info(f"P({sum_to}, {n}) = {cnt}")
+    logger.info(f"cnt: {cnt}, fits 4 bytes size ({2**32}): {cnt < 2**32}")
     return cnt
 
 
@@ -378,53 +384,56 @@ def calc_sum_partition_count_by_formula(s: int, n: int) -> int:
     with Pool(processes=multiprocessing.cpu_count()) as pool:
         for res in pool.starmap(sum_partition_count, [(s-i, n-i, 0, i+2) for i in range(n-3)]):
             _cnt += res
-    print(f"cnt: {_cnt}, fits 4 bytes size ({2**32}): {_cnt < 2**32}")
+    logger.info(f"cnt: {_cnt}, fits 4 bytes size ({2**32}): {_cnt < 2**32}")
     return _cnt
 
 
 def partition_index():
     # [12, 453, 501, 738, 1345, 1589, 2127, 3289, 4967, 5459]
     idx = get_partitions_index_by_term_iteration(20480, 10, 0, 12, 5459)
-    print("P(20480, 10, 0, 12, 5459) - ", idx)
+    logger.info("P(20480, 10, 0, 12, 5459) - ", idx)
 
     # [2, 3, 4, 18, 74]
     idx = get_partitions_index_by_term_iteration(101, 5, 0, 2, 74)
-    print("P(101, 5, 0, 2, 74) - ", idx)
+    logger.info("P(101, 5, 0, 2, 74) - ", idx)
 
     # [15, 17, 19, 20, 30]
     idx = get_partitions_index_by_term_iteration(101, 5, 0, 15, 30)
-    print("P(101, 5, 0, 15, 30) - ", idx)
+    logger.info("P(101, 5, 0, 15, 30) - ", idx)
 
 
 def main():
     start_time = time.perf_counter()
 
-    print("calc_sum_partitions_count_by_diff(300, 500, 6194373023, 10)")
-    cnt = calc_sum_partitions_count_by_diff(300, 500, 6194373023, 10)
-    if cnt == 886831799718:
-        print("test has passed OK")
-    else:
-        print(f"test failed: 886831799718 (expected) != {cnt} (actual)")
+    #logger.info("get_part_cnt([1, 2, 3, 4, 5, 6, 7, 8, 9, 455], 500, 0)")
+    #cnt = get_part_cnt([1, 2, 3, 4, 5, 6, 7, 8, 9, 455], 500, 0)
+    #if cnt == 886831799718:
+    #    logger.info("test has passed OK")
+    #else:
+    #    logger.info(f"test failed: 886831799718 (expected) != {cnt} (actual)")
 
     #run_compressions(layers[0])
     #compression_try()
     #partitioning_try()
     #partitioning_cnt_try()
-    #sum_partition_cnt(500, 20)
+    #logger.info("sum_partition_cnt(500, 10)")
+    #sum_partition_cnt(500, 10)
     #save_sum_partitions(1000, 10, save_csv=False)
     #save_sum_partitions_diff(5001, 10, save_csv=False)
 
+    logger.info("calc_sum_partitions_count_by_diff(300, 400, 33114319, 20)")
+    calc_sum_partitions_count_by_diff(300, 400, 33114319, 20)
     #calc_sum_partition_count_by_formula(1000, 10)
     #calc_sum_partitions_count(31000, 40960, 497109647, 20)
     #parts = _run_diff_serial(50, 7)
-    #print(parts)
-    #print(len(parts))
+    #logger.info(parts)
+    #logger.info(len(parts))
     #partition_index()
     #s = find_partition_diff_by_idx(50, 7, 4)
-    #print(s)
-    #print(len(s))
+    #logger.info(s)
+    #logger.info(len(s))
     end_time = time.perf_counter()
-    print(f"Execution time: {end_time - start_time:.6f} seconds")
+    logger.info(f"Execution time: {end_time - start_time:.6f} seconds")
 
 
 if __name__ == "__main__":

@@ -1,4 +1,5 @@
 import copy
+import logging
 
 from typing import List, Generator, Tuple
 
@@ -7,6 +8,9 @@ from partition_utils import (ap_sum, get_init_partition, get_term_iteration_inte
                              get_partition_by_term_iteration_ap_min_last,
                              get_partition_by_term_iteration_ap_max_last,
                              get_tail_partition_iteration_cnt)
+
+
+logger = logging.getLogger('partition')
 
 
 class SmallLengthPartitionsStopIteration(Exception):
@@ -46,7 +50,7 @@ def get_part_cnt(init_part: List[int], s: int, idx: int, last_term_limit: int = 
     if last_term_limit > 0:
         cnt = _mongo.get_part_ceil(s, n, init_iteration, last_term_limit)
         if cnt:
-            print(f"P({s}, {n}, {init_iteration}, {last_term_limit}) = {cnt} (getting from cache)")
+            logger.info(f"P({s}, {n}, {init_iteration}, {last_term_limit}) = {cnt} (getting from cache)")
             return cnt
     else:
         ceil = 1 << 32
@@ -93,7 +97,7 @@ def get_part_cnt(init_part: List[int], s: int, idx: int, last_term_limit: int = 
 
     if last_term_limit > 0:
         _mongo.add_part_ceil(s, n, init_iteration, last_term_limit, cnt)
-        print(f"P({s}, {n}, {init_iteration}, {last_term_limit}) = {cnt}")
+        logger.info(f"P({s}, {n}, {init_iteration}, {last_term_limit}) = {cnt}")
 
     return cnt
 
@@ -201,19 +205,19 @@ def gen_next_part_old(init_part: List[int], s: int, idx: int, last_term_limit: i
             for i in range(1, n - term_idx):
                 part[term_idx + i] = part[term_idx] + i
             part[-1] = s - ap_sum(part[term_idx], n - term_idx - 1) - left_part_sum
-            #print(ap_sum(part[term_idx], n - term_idx - 1), left_part_sum)
-            #print("init ", part)
+            #logger.info(ap_sum(part[term_idx], n - term_idx - 1), left_part_sum)
+            #logger.info("init ", part)
             p2 = part[-2]
             p1 = part[-1]
             if p2 < p1 < last_term_limit:
                 for i in range(term_idx, n - 3):
                     left_part_sum += part[i]
-                #print("term_idx = n-3: left_part_sum:", left_part_sum)
+                #logger.info("term_idx = n-3: left_part_sum:", left_part_sum)
                 term_idx = n - 3
             else:
                 term_idx -= 1
                 left_part_sum -= part[term_idx]
-                #print("term_idx -= 1: left_part_sum:", left_part_sum)
+                #logger.info("term_idx -= 1: left_part_sum:", left_part_sum)
                 if term_idx < idx:
                     break
 
@@ -252,12 +256,12 @@ def gen_next_part(init_part: List[int], s: int, idx: int, last_term_limit: int) 
         for i in range(1, n - term_idx):
             part[term_idx + i] = part[term_idx] + i
         part[-1] = s - ap_sum(part[term_idx], n - term_idx - 1) - left_part_sum
-        #print(ap_sum(part[term_idx], n - term_idx - 1), left_part_sum)
-        #print("init ", part)
+        #logger.info(ap_sum(part[term_idx], n - term_idx - 1), left_part_sum)
+        #logger.info("init ", part)
         if part[-2] < part[-1]:
             for i in range(term_idx, n - 2):
                 left_part_sum += part[i]
-            #print("term_idx = n-2: left_part_sum:", left_part_sum)
+            #logger.info("term_idx = n-2: left_part_sum:", left_part_sum)
             term_idx = n - 2
             is_valid = part[-1] < last_term_limit
         else:
@@ -265,7 +269,7 @@ def gen_next_part(init_part: List[int], s: int, idx: int, last_term_limit: int) 
             if term_idx < idx:
                 break
             left_part_sum -= part[term_idx]
-            #print("term_idx -= 1: left_part_sum:", left_part_sum)
+            #logger.info("term_idx -= 1: left_part_sum:", left_part_sum)
             is_valid = False
 
 
@@ -338,7 +342,7 @@ def gen_edge_partitions_by_term_iteration(s: int, n: int, term_idx: int, iterati
     #for i in range(term_idx+1,n-2):
     #    _min, _max = get_term_iteration_interval(s, n, i)
     #    _min += ap_offset
-    #    print(_min, _max)
+    #    logger.info(_min, _max)
 
     left_sum += iteration
     _left_part = [0] * (term_idx + 1)
@@ -348,15 +352,15 @@ def gen_edge_partitions_by_term_iteration(s: int, n: int, term_idx: int, iterati
 
     _part_first = get_partition_by_term_iteration_ap_min_last(s, n, term_idx, iteration)
     _part_last = get_partition_by_term_iteration_ap_max_last(s, n, term_idx, iteration)
-    #print(_part_first)
-    #print(_part_last)
+    #logger.info(_part_first)
+    #logger.info(_part_last)
 
     _sum_max = _part_first[-1] + _part_first[-2]
     _sum_min = _part_last[-1] + _part_last[-2]
     # now we are looking the last max partition for term_idx by gen_max_part
     # need to use get_partition_by_term_iteration_max_last(s, n, term_idx, iteration) instead
     for _part in gen_next_part(_part_last, s, term_idx+1, s):
-        #print("gen part:", _part)
+        #logger.info("gen part:", _part)
         _sum_min_gen = _part[-1] + _part[-2]
         if _sum_min_gen < _sum_min:
             _sum_min = _sum_min_gen
@@ -371,7 +375,7 @@ def gen_edge_partitions_by_term_iteration(s: int, n: int, term_idx: int, iterati
         _s = s - left_sum - _sum
         try:
             _init_part = get_init_partition(_s, middle_terms_cnt, 0, iteration+1)
-            #print(f"init {_s}:", _init_part)
+            #logger.info(f"init {_s}:", _init_part)
         except ValueError:
             _sum -= 1
             continue
@@ -430,7 +434,7 @@ def _get_edge_partitions_by_term_iteration_cnt(s: int, n: int, term_idx: int, it
     # now we are looking the last max partition for term_idx by gen_max_part
     # need to use get_partition_by_term_iteration_max_last(s, n, term_idx, iteration) instead
     for _part in gen_next_part(_part_last, s, term_idx + 1, s):
-        # print("gen part:", _part)
+        # logger.info("gen part:", _part)
         _sum_min_gen = _part[-1] + _part[-2]
         if _sum_min_gen < _sum_min:
             _sum_min = _sum_min_gen
