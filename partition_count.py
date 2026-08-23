@@ -102,124 +102,27 @@ def get_part_cnt(init_part: List[int], s: int, idx: int, last_term_limit: int = 
     return cnt
 
 
-def get_part_cnt_error(s: int, n: int, idx: int, last_term_limit: int) -> int:
+def get_part_count(s: int, n: int, term_idx: int, iteration: int, ceil: int) -> int:
+    """ returns all partitions for term_idx starting from iteration. Uses ceil.
     """
-    increment the most right term n-1 (before the result sum term - last),
-    when the rule is failed increment n-2 by creating the min partition for this iteration
-    and so on till the most left term and its all iterations.
-    1, 2, 3, 4, 15
-    starting with:
-        term_idx = n-3 (2)
-        iteration = 3
-        left_part_sum = 3
-        get_tail_partition_iteration_cnt(25, 3, 3) = 6
-    :param s: sum
-    :param n: terms number
-    :param idx: term_idx from 0 to n-2
-    :param last_term_limit: limiter to the last term of the partition that is being generated.
-    :return:
-    """
-    term_idx = n - 4
-    # keep the left sum before term_idx
-    left_part_sum = ap_sum(1, term_idx+1)
-    iteration = term_idx + 2
-    i = iteration
-    lps = 0
-    ti = term_idx
-    is_tail = False
     cnt = 0
-    is_valid = True
-    while True:
-        _cnt = get_tail_partition_iteration_cnt(s, left_part_sum + lps, i)
-        if _cnt:
-            # n-3
-            cnt += _cnt
-            i += 1
-            is_tail = True
-        else:
-            if is_tail:
-                # n-4
-                # part[term_idx]++
-                lps += 1
-                iteration += 1
-                i = iteration
-                is_tail = False
-                ti = n - 4
-            else:
-                # term_idx--
-                if ti == term_idx:
-                    term_idx -= 1
-                    if term_idx < idx:
-                        break
-                ti -= 1
-                left_part_sum -= lps
-                left_part_sum += 2
-                # term_idx = n-4
-                #lps = left_part_sum + ap_sum(term_idx + 3, n - 4 - term_idx)
-                lps = 0
-                is_tail = True
-                i = s  # _cnt = 0
-                # iteration = part[n-3]
-                iteration = n - 1 - term_idx
-    return cnt
+    try:
+        _init_part = get_init_partition(s, n, term_idx, iteration)
+    except ValueError:
+        return cnt
+
+    return get_part_cnt(_init_part, s, term_idx, ceil)
 
 
-def gen_next_part_old(init_part: List[int], s: int, idx: int, last_term_limit: int) -> Generator:
+def get_part_count_from_prev_ceil(s: int, n: int, iteration: int, ceil: int) -> int:
     """
-    Generating partitions by the method:
-    increment the most right term n-1 (before the result sum term - last),
-    when the rule is failed increment n-2 by creating the min partition for this iteration
-    and so on till the most left term and its all iterations.
-    :param init_part: initial partition
-    :param s: sum
-    :param idx: term_idx from 0 to n-2
-    :param last_term_limit: limiter to the last term of the partition that is being generated.
-    :return:
+    P(S, n, i, c) = P(S, n, i, c-1) + P(S-i-c+1,n-2,i+1,c-1)
+    term_idx = 0, it means we count all for the first term's iteration.
     """
-    n = len(init_part)
-    part = init_part
+    _cnt = get_part_count(s, n, 0, iteration, ceil)
+    _cnt += get_part_count(s - iteration - ceil + 1, n - 2, iteration + 1, ceil - 1)
+    return _cnt
 
-    # we still can generate some valid partitions for term_idx+1 and more even when last_term_limit <= part[-1].
-    #if last_term_limit <= part[-1]:
-    #    return
-
-    term_idx = n - 2
-    # keep the left sum before term_idx
-    left_part_sum = 0
-    for i in range(term_idx):
-        left_part_sum += part[i]
-
-    p2 = part[-2]
-    p1 = part[-1]
-    while True:
-    #for j in range(30):
-        if p2 < p1 < last_term_limit:
-            part[-2] = p2
-            part[-1] = p1
-            yield part
-            part = copy.copy(part)
-            p2 += 1
-            p1 -= 1
-        else:
-            part[term_idx] += 1
-            for i in range(1, n - term_idx):
-                part[term_idx + i] = part[term_idx] + i
-            part[-1] = s - ap_sum(part[term_idx], n - term_idx - 1) - left_part_sum
-            #logger.info(ap_sum(part[term_idx], n - term_idx - 1), left_part_sum)
-            #logger.info("init ", part)
-            p2 = part[-2]
-            p1 = part[-1]
-            if p2 < p1 < last_term_limit:
-                for i in range(term_idx, n - 3):
-                    left_part_sum += part[i]
-                #logger.info("term_idx = n-3: left_part_sum:", left_part_sum)
-                term_idx = n - 3
-            else:
-                term_idx -= 1
-                left_part_sum -= part[term_idx]
-                #logger.info("term_idx -= 1: left_part_sum:", left_part_sum)
-                if term_idx < idx:
-                    break
 
 def gen_next_part(init_part: List[int], s: int, idx: int, last_term_limit: int) -> Generator:
     """
@@ -273,42 +176,6 @@ def gen_next_part(init_part: List[int], s: int, idx: int, last_term_limit: int) 
             is_valid = False
 
 
-def gen_next_part_error(init_part: List[int], idx: int, s: int) -> Generator:
-    """
-    -- generating edge partitions --
-    We are working with one idx index of a row.
-        idx - addend which is growing.
-    We are transforming the partitioning by decreasing the most right addend by 1
-    and increasing the previous addend by 1, so the sum is the same.
-    When the distinct and ascended order rule is failed we increase the next term by 1.
-    When we reach the last possible partition for this idx we stop.
-    """
-    n = len(init_part)
-    part = init_part
-    iteration = part[idx]
-    p2 = part[-2]
-    p1 = part[-1]
-    while True:
-        if p2 < p1:
-            part[-2] = p2
-            part[-1] = p1
-            yield part
-            part = copy.copy(part)
-            p2 += 1
-            p1 -= 1
-        else:
-            # the idea is to generate the partitions recursively.
-            # for example, P(20, 5) is
-            # the above partitions and
-            # nested partitions for P(18, 4) and so on
-            # see nested formula
-            try:
-                iteration += 1
-                part = get_init_partition(s, n, idx, iteration)
-            except ValueError:
-                break
-
-
 def gen_edge_partitions_by_term_iteration(s: int, n: int, term_idx: int, iteration: int) -> Generator:
     """
     edge partition: p[-1] - p[-2] == 1
@@ -357,7 +224,7 @@ def gen_edge_partitions_by_term_iteration(s: int, n: int, term_idx: int, iterati
 
     _sum_max = _part_first[-1] + _part_first[-2]
     _sum_min = _part_last[-1] + _part_last[-2]
-    # now we are looking the last max partition for term_idx by gen_max_part
+    # now we are looking the last max partition for term_idx by gen_next_part
     # need to use get_partition_by_term_iteration_max_last(s, n, term_idx, iteration) instead
     for _part in gen_next_part(_part_last, s, term_idx+1, s):
         #logger.info("gen part:", _part)
@@ -431,7 +298,7 @@ def _get_edge_partitions_by_term_iteration_cnt(s: int, n: int, term_idx: int, it
 
     _sum_max = _part_first[-1] + _part_first[-2]
     _sum_min = _part_last[-1] + _part_last[-2]
-    # now we are looking the last max partition for term_idx by gen_max_part
+    # now we are looking the last max partition for term_idx by gen_next_part
     # need to use get_partition_by_term_iteration_max_last(s, n, term_idx, iteration) instead
     for _part in gen_next_part(_part_last, s, term_idx + 1, s):
         # logger.info("gen part:", _part)
@@ -446,14 +313,8 @@ def _get_edge_partitions_by_term_iteration_cnt(s: int, n: int, term_idx: int, it
             continue
 
         _s = s - left_sum - _sum
-        try:
-            _init_part = get_init_partition(_s, middle_terms_cnt, 0, iteration+1)
-        except ValueError:
-            _sum -= 1
-            continue
-
         med = _sum // 2
-        cnt += get_part_cnt(_init_part, _s, 0, med)
+        cnt += get_part_count_from_prev_ceil(_s, middle_terms_cnt, iteration+1, med)
         _sum -= 1
 
     return cnt
