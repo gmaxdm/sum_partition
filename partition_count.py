@@ -7,7 +7,7 @@ from mongo.client import get_client
 from partition_utils import (ap_sum, get_init_partition, get_term_interval,
                              get_partition_by_term_iteration_ap_min_last,
                              get_partition_by_term_iteration_ap_max_last,
-                             get_tail_partition_iteration_cnt)
+                             get_tail_partition_iteration_cnt, is_valid)
 
 
 logger = logging.getLogger('partition')
@@ -114,17 +114,31 @@ def get_part_count(s: int, n: int, term_idx: int, iteration: int, ceil: int) -> 
     return get_part_cnt(_init_part, s, term_idx, ceil)
 
 
-def get_part_count_from_prev_ceil(s: int, n: int, iteration: int, ceil: int) -> int:
+def get_part_count_ceil(s: int, n: int, iteration: int, ceil: int) -> int:
     """
     P(S, n, i, c) = P(S, n, i, c-1) + P(S-i-c+1,n-2,i+1,c-1)
     term_idx = 0, it means we count all for the first term's iteration.
     """
-    _cnt = get_part_count(s, n, 0, iteration, ceil-1)
-    if _cnt == 0:
-        # get_init_partition fails no matter what ceil is.
+    if not is_valid(s, n, 0, iteration):
         return 0
 
+    _mongo = get_client()
+
+    if 0 < ceil < s:
+        cnt = _mongo.get_part_ceil(s, n, iteration, ceil)
+        if cnt:
+            logger.info(f"P({s}, {n}, {iteration}, {ceil}) = {cnt} (getting from cache)")
+            return cnt
+
+    _cnt = get_part_count(s, n, 0, iteration, ceil-1)
+    if _cnt == 0:
+        return _cnt
+
     _cnt += get_part_count(s - iteration - ceil + 1, n - 2, 0, iteration + 1, ceil - 1)
+
+    if _cnt and 0 < ceil < s:
+        _mongo.add_part_ceil(s, n, iteration, ceil, _cnt)
+        logger.info(f"P({s}, {n}, {iteration}, {ceil}) = {_cnt}")
     return _cnt
 
 
@@ -318,7 +332,7 @@ def _get_edge_partitions_by_term_iteration_cnt(s: int, n: int, term_idx: int, it
 
         _s = s - left_sum - _sum
         med = _sum // 2
-        cnt += get_part_count_from_prev_ceil(_s, middle_terms_cnt, iteration+1, med)
+        cnt += get_part_count_ceil(_s, middle_terms_cnt, iteration+1, med)
         _sum -= 1
 
     return cnt

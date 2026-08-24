@@ -9,6 +9,14 @@ def ap_sum(a: int, n: int) -> int:
     return (n * (2 * a + n - 1)) // 2
 
 
+def is_valid(s: int, n: int, term_idx: int, iteration: int) -> bool:
+    if s <= 0:
+        return False
+    if n < 2:
+        return False
+    return True
+
+
 def get_ap_left_part_sum(term_idx: int, iteration: int, n: int) -> int:
     """
     get sum of a min (arithmetic progression) partition of term_idx and iteration (without the last item).
