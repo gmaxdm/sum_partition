@@ -4,7 +4,7 @@ from partition_count import (gen_next_part, get_part_cnt,
                              gen_edge_partitions_by_term_iteration,
                              get_edge_partitions_by_term_iteration_cnt,
                              SmallLengthPartitionsStopIteration)
-from partition_utils import get_term_iteration_interval
+from partition_utils import get_term_interval
 from utils import save_to_csv
 
 
@@ -133,7 +133,7 @@ def test_get_edge_partitions_by_term_iteration_cnt_diff():
     cnt = 0
     s = 50
     n = 7
-    _min, _max = get_term_iteration_interval(s, n, 0)
+    _min, _max = get_term_interval(s, n, 0)
     for j in range(_min, _max):
         _cnt, is_stop = get_edge_partitions_by_term_iteration_cnt(s, n, 0, j)
         cnt += _cnt

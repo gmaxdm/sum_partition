@@ -1,6 +1,6 @@
 import pytest
 
-from partition_utils import (get_ap_left_part_sum, get_init_partition, get_term_iteration_interval,
+from partition_utils import (get_ap_left_part_sum, get_init_partition, get_term_interval,
                              get_partitions_cnt_by_term_iteration, get_partition_by_term_iteration_ap_min_last,
                              get_partition_by_term_ap_max_last, get_partition_by_term_iteration_ap_min_first,
                              get_tail_partition_iteration_cnt, get_partition_by_term_iteration_ap_max_last)
@@ -32,28 +32,28 @@ def test_get_init_partition():
     assert part1 == part2
 
 
-def test_get_term_iteration_interval():
-    _min, _max = get_term_iteration_interval(25, 5, 0)
+def test_get_term_interval():
+    _min, _max = get_term_interval(25, 5, 0)
     assert _min == 1
     assert _max == 3
 
-    _min, _max = get_term_iteration_interval(22, 5, 2)
+    _min, _max = get_term_interval(22, 5, 2)
     assert _min == 3
     assert _max == 5
 
-    _min, _max = get_term_iteration_interval(21, 5, 3)
+    _min, _max = get_term_interval(21, 5, 3)
     assert _min == 4
     assert _max == 7
 
-    _min, _max = get_term_iteration_interval(25, 5, 2)
+    _min, _max = get_term_interval(25, 5, 2)
     assert _min == 3
     assert _max == 6
 
-    _min, _max = get_term_iteration_interval(25, 5, 3)
+    _min, _max = get_term_interval(25, 5, 3)
     assert _min == 4
     assert _max == 9
 
-    _min, _max = get_term_iteration_interval(101, 5, 2)
+    _min, _max = get_term_interval(101, 5, 2)
     assert _min == 3
     assert _max == 31
 

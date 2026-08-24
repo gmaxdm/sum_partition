@@ -19,7 +19,7 @@ from partition_count import (get_part_cnt, gen_next_part,
                              gen_edge_partitions_by_term_iteration,
                              get_edge_partitions_by_term_iteration_cnt,
                              SmallLengthPartitionsStopIteration)
-from partition_utils import (ap_sum, get_ap_left_part_sum, get_term_iteration_interval,
+from partition_utils import (ap_sum, get_ap_left_part_sum, get_term_interval,
                              get_init_partition, get_partitions_cnt_by_term_iteration)
 from compression_utils import (gen_ordered_numbers, compress_layer, gen_bytes, split_by_layers,
                                print_layers_stat, NUM_LEN)
@@ -166,11 +166,11 @@ def get_partitions_index_by_term_iteration(s: int, n: int, term_idx: int, iterat
 
     _idx = 0
     for i in range(term_idx):
-        _min, _max = get_term_iteration_interval(s, n, i)
+        _min, _max = get_term_interval(s, n, i)
         for j in range(_min + 1, _max + 1):
             _idx += get_partitions_cnt_by_term_iteration(s, n, i, j)
 
-    _min, _max = get_term_iteration_interval(s, n, term_idx)
+    _min, _max = get_term_interval(s, n, term_idx)
     for j in range(_min + 1, iteration):
         _idx += get_partitions_cnt_by_term_iteration(s, n, term_idx, j)
 
@@ -189,7 +189,7 @@ def find_partition_diff_by_idx(s: int, n: int, idx: int) -> List[List[int]]:
     if idx > n - 2:
         return parts
 
-    _min, _max = get_term_iteration_interval(s, n, idx)
+    _min, _max = get_term_interval(s, n, idx)
     for j in range(_min + 1, _max + 1):
         try:
             for _part in gen_edge_partitions_by_term_iteration(s, n, idx, j):
@@ -322,7 +322,7 @@ def get_partition_diff_by_term_cnt(s: int, n: int) -> int:
         return cnt
 
     cnt = 0
-    _min, _max = get_term_iteration_interval(s, n, 0)
+    _min, _max = get_term_interval(s, n, 0)
     logger.info(f"s: {s}, n: {n}, min: {_min}, max: {_max}")
     for j in range(_min, _max + 1):
         _cnt = _mongo.get_edge(s, n, j)

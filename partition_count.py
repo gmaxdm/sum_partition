@@ -4,7 +4,7 @@ import logging
 from typing import List, Generator, Tuple
 
 from mongo.client import get_client
-from partition_utils import (ap_sum, get_init_partition, get_term_iteration_interval,
+from partition_utils import (ap_sum, get_init_partition, get_term_interval,
                              get_partition_by_term_iteration_ap_min_last,
                              get_partition_by_term_iteration_ap_max_last,
                              get_tail_partition_iteration_cnt)
@@ -47,7 +47,7 @@ def get_part_cnt(init_part: List[int], s: int, idx: int, last_term_limit: int = 
 
     init_iteration = init_part[0]
     ceil = last_term_limit
-    if last_term_limit > 0:
+    if 0 < last_term_limit < s:
         cnt = _mongo.get_part_ceil(s, n, init_iteration, last_term_limit)
         if cnt:
             logger.info(f"P({s}, {n}, {init_iteration}, {last_term_limit}) = {cnt} (getting from cache)")
@@ -62,7 +62,7 @@ def get_part_cnt(init_part: List[int], s: int, idx: int, last_term_limit: int = 
     for i in range(term_idx):
         left_part_sum += part[i]
 
-    _, _max = get_term_iteration_interval(s, n, term_idx + 1)
+    _, _max = get_term_interval(s, n, term_idx + 1)
     iteration = part[term_idx + 1]
     cnt = 0
     _cnt = 0
@@ -95,7 +95,7 @@ def get_part_cnt(init_part: List[int], s: int, idx: int, last_term_limit: int = 
                 is_valid = False
                 _cnt = 0
 
-    if last_term_limit > 0:
+    if 0 < last_term_limit < s:
         _mongo.add_part_ceil(s, n, init_iteration, last_term_limit, cnt)
         logger.info(f"P({s}, {n}, {init_iteration}, {last_term_limit}) = {cnt}")
 
@@ -192,7 +192,7 @@ def gen_edge_partitions_by_term_iteration(s: int, n: int, term_idx: int, iterati
     if term_idx >= n - 1:
         raise Exception("term index exceeds n - 1")
 
-    _min, _max = get_term_iteration_interval(s, n, term_idx + 1)
+    _min, _max = get_term_interval(s, n, term_idx + 1)
     left_sum = ap_sum(1, term_idx)
     middle_terms_cnt = n - term_idx - 3
     if middle_terms_cnt < 3:
@@ -211,7 +211,7 @@ def gen_edge_partitions_by_term_iteration(s: int, n: int, term_idx: int, iterati
 
     #ap_offset = iteration - term_idx - 1
     #for i in range(term_idx+1,n-2):
-    #    _min, _max = get_term_iteration_interval(s, n, i)
+    #    _min, _max = get_term_interval(s, n, i)
     #    _min += ap_offset
     #    logger.info(_min, _max)
 
@@ -278,7 +278,7 @@ def _get_edge_partitions_by_term_iteration_cnt(s: int, n: int, term_idx: int, it
 
     cnt = 0
 
-    _min, _max = get_term_iteration_interval(s, n, term_idx + 1)
+    _min, _max = get_term_interval(s, n, term_idx + 1)
     left_sum = ap_sum(1, term_idx)
     middle_terms_cnt = n - term_idx - 3
     if middle_terms_cnt < 3:

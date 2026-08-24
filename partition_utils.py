@@ -106,7 +106,7 @@ def get_partition_by_term_max_last(s: int, n: int, term_idx: int) -> List[int]:
     if term_idx >= n-1:
         raise Exception("addend index exceeds n")
 
-    _, _max = get_term_iteration_interval(s, n, term_idx)
+    _, _max = get_term_interval(s, n, term_idx)
     _part_ap_last = get_partition_by_term_iteration_ap_max_last(s, n, term_idx, _max)
     _diff = _part_ap_last[-2] - _part_ap_last[-3]
     if _diff == 1:
@@ -134,7 +134,7 @@ def get_partition_by_term_ap_max_last(s: int, n: int, term_idx: int) -> List[int
     if term_idx >= n-1:
         raise Exception("addend index exceeds n")
 
-    _, _max = get_term_iteration_interval(s, n, term_idx)
+    _, _max = get_term_interval(s, n, term_idx)
     return get_partition_by_term_iteration_ap_min_last(s, n, term_idx, _max)
 
 
@@ -171,7 +171,7 @@ def get_partition_by_term_iteration_ap_min_last(s: int, n: int, term_idx: int, i
     """
     if term_idx >= n-1:
         raise ValueError("term index exceeds n")
-    _min, _max = get_term_iteration_interval(s, n, term_idx)
+    _min, _max = get_term_interval(s, n, term_idx)
     if iteration < _min or iteration > _max:
         raise ValueError("term iteration exceeds iteration interval")
 
@@ -220,7 +220,7 @@ def get_partition_by_term_iteration_ap_min_first(s: int, n: int, term_idx: int, 
 def get_partition_by_term_iteration_ap_min_last_term(s: int, n: int, term_idx: int, iteration: int) -> int:
     if term_idx >= n-1:
         raise Exception("term index exceeds n")
-    _min, _max = get_term_iteration_interval(s, n, term_idx)
+    _min, _max = get_term_interval(s, n, term_idx)
     if iteration < _min or iteration > _max:
         raise Exception("term iteration exceeds iteration interval")
 
@@ -239,11 +239,11 @@ def get_partition_by_term_iteration_ap_min_last_term(s: int, n: int, term_idx: i
     return _last
 
 
-def get_term_iteration_interval(s: int, n: int, term_idx: int) -> Tuple[int, int]:
+def get_term_interval(s: int, n: int, term_idx: int) -> Tuple[int, int]:
     """
     :param s:
     :param n:
-    :param term_idx:
+    :param term_idx: term index from 0 to n-2 included
     :return:
     """
     k = term_idx
