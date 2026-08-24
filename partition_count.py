@@ -119,8 +119,12 @@ def get_part_count_from_prev_ceil(s: int, n: int, iteration: int, ceil: int) -> 
     P(S, n, i, c) = P(S, n, i, c-1) + P(S-i-c+1,n-2,i+1,c-1)
     term_idx = 0, it means we count all for the first term's iteration.
     """
-    _cnt = get_part_count(s, n, 0, iteration, ceil)
-    _cnt += get_part_count(s - iteration - ceil + 1, n - 2, iteration + 1, ceil - 1)
+    _cnt = get_part_count(s, n, 0, iteration, ceil-1)
+    if _cnt == 0:
+        # get_init_partition fails no matter what ceil is.
+        return 0
+
+    _cnt += get_part_count(s - iteration - ceil + 1, n - 2, 0, iteration + 1, ceil - 1)
     return _cnt
 
 

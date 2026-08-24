@@ -68,6 +68,10 @@ def test_gen_next_part_last_term_limit():
 
 
 def test_get_part_cnt():
+    init_part = [1, 2, 3, 4, 5]
+    cnt = get_part_cnt(init_part, 15, 0)
+    assert cnt == 1
+
     init_part = [1, 2, 3, 4, 15]
     cnt = get_part_cnt(init_part, 25, 0)
     assert cnt == 30

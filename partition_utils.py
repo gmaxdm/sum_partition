@@ -56,9 +56,9 @@ def get_init_partition(s: int, n: int, term_idx: int, iteration: int) -> List[in
     :return:
     """
     if s <= 0:
-        raise Exception("s should be positive")
-    if n == 1:
-        raise Exception(f"term number should be at least 2")
+        raise ValueError("s should be positive")
+    if n < 2:
+        raise ValueError("term number should be at least 2")
 
     _part = [0] * n
     for i in range(term_idx):

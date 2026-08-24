@@ -12,6 +12,27 @@ class MongoDB:
                                            connect=False)
         self._db = getattr(self._client, MONGODB["db"])
 
+    def init_db(self):
+        #self._db.create_collection("part")
+        #self._db.create_collection("part_ceil")
+        #self._db.create_collection("diff")
+        #self._db.create_collection("edge")
+
+        part = self._db.part
+        part_ceil = self._db.part_ceil
+        diff = self._db.diff
+        edge = self._db.edge
+
+        # 1 - pymongo.ASCENDING, -1 - pymongo.DESCENDING
+        idx = part.create_index([("s", 1), ("n", 1)], unique=True)
+        print(f"Created unique compound index: {idx}")
+        idx = part_ceil.create_index([("s", 1), ("n", 1), ("i", 1), ("c", 1)], unique=True)
+        print(f"Created unique compound index: {idx}")
+        idx = diff.create_index([("s", 1), ("n", 1)], unique=True)
+        print(f"Created unique compound index: {idx}")
+        idx = edge.create_index([("s", 1), ("n", 1), ("i", 1)], unique=True)
+        print(f"Created unique compound index: {idx}")
+
     def get_part(self, s: int, n: int) -> int:
         res = self._db.part.find_one({"s": s, "n": n})
         if res:
