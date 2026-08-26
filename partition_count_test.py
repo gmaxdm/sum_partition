@@ -1,6 +1,7 @@
 import pytest
 
-from partition_count import (gen_next_part, get_part_cnt,
+from partition_count import (gen_next_part, get_part_cnt, get_part_count,
+                             get_part_count_ceil,
                              gen_edge_partitions_by_term_iteration,
                              get_edge_partitions_by_term_iteration_cnt,
                              SmallLengthPartitionsStopIteration)
@@ -106,6 +107,38 @@ def test_get_part_cnt_last_term_limit():
     init_part = [1, 2, 3, 4, 15]
     cnt = get_part_cnt(init_part, 25, 0, 9)
     assert cnt == 5
+
+
+def test_get_part_count_ceil():
+    init_part = [1, 2, 3, 4, 5, 6, 29]
+    _cnt = 0
+    # count parts for term_idx = 0, iteration >= 3 where last term less than 13:
+    _cnt3 = 0
+    for p in gen_next_part(init_part, 50, 0, 50):
+        if p[-1] < 13:
+            _cnt += 1
+            if p[0] >= 3:
+                _cnt3 += 1
+
+    assert _cnt == 39
+    assert _cnt3 == 9
+    # for all iterations:
+    cnt = get_part_cnt(init_part, 50, 0, 13)
+    assert cnt == _cnt
+
+    cnt = get_part_count(50, 7, 0, 1, 13)
+    assert cnt == _cnt
+
+    # for all iterations:
+    cnt = get_part_count_ceil(50, 7, 1, 13)
+    assert cnt == _cnt
+
+    # for iterations from 3 and above:
+    cnt = get_part_count_ceil(50, 7, 3, 13)
+    assert cnt == _cnt3
+
+    cnt = get_part_count_ceil(27, 4, 3, 10)
+    assert cnt == 3
 
 
 def test_gen_edge_partitions_by_term_iteration():

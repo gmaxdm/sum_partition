@@ -1,6 +1,6 @@
 import pytest
 
-from partition_utils import (get_ap_left_part_sum, get_init_partition, get_term_interval,
+from partition_utils import (get_ap_left_part_sum, get_init_partition, get_term_interval, get_min_part_last_term,
                              get_partitions_cnt_by_term_iteration, get_partition_by_term_iteration_ap_min_last,
                              get_partition_by_term_ap_max_last, get_partition_by_term_iteration_ap_min_first,
                              get_tail_partition_iteration_cnt, get_partition_by_term_iteration_ap_max_last)
@@ -180,3 +180,12 @@ def test_get_tail_partition_iteration_cnt_last_term_limit():
     # [1, 2, 4, 5, 6, 7]
     cnt = get_tail_partition_iteration_cnt(25, 7, 5, last_term_limit=7)
     assert cnt == 0
+
+
+def test_get_min_part_last_term():
+    _max_ceil = get_min_part_last_term(25, 5, 1)
+    assert _max_ceil == 15
+
+    _max_ceil = get_min_part_last_term(25, 5, 3)
+    assert _max_ceil == 7
+

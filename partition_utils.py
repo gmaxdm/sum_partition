@@ -54,6 +54,13 @@ def get_tail_partition_iteration_cnt(s: int, left_part_sum: int, iteration: int,
     return p1_f - _s // 2
 
 
+def get_min_part_last_term(s: int, n: int, iteration: int) -> int:
+    """
+    term_idx = 0
+    """
+    return s - ap_sum(iteration, n-1)
+
+
 def get_init_partition(s: int, n: int, term_idx: int, iteration: int) -> List[int]:
     """
     Init a new partition for the term_idx index and iteration.

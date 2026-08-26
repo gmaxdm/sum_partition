@@ -7,7 +7,8 @@ from mongo.client import get_client
 from partition_utils import (ap_sum, get_init_partition, get_term_interval,
                              get_partition_by_term_iteration_ap_min_last,
                              get_partition_by_term_iteration_ap_max_last,
-                             get_tail_partition_iteration_cnt, is_valid)
+                             get_tail_partition_iteration_cnt, get_min_part_last_term,
+                             is_valid)
 
 
 logger = logging.getLogger('partition')
@@ -38,22 +39,26 @@ def get_part_cnt(init_part: List[int], s: int, idx: int, last_term_limit: int = 
     :return:
     """
     n = len(init_part)
-    if n < 2:
-        raise ValueError("n is too small")
-    if idx > n - 4:
-        raise ValueError("idx should be less than n-4")
+    if n < 4:
+        cnt = 0
+        for _ in gen_next_part(init_part, s, idx, last_term_limit):
+            cnt += 1
+        return cnt
 
     _mongo = get_client()
 
     init_iteration = init_part[0]
     ceil = last_term_limit
-    if 0 < last_term_limit < s:
+    # See the get_part_count_ceil for ceil validation.
+    # It is supposed that the ceil is used by get_part_count_ceil only.
+    if last_term_limit > 0:
         cnt = _mongo.get_part_ceil(s, n, init_iteration, last_term_limit)
         if cnt:
             logger.info(f"P({s}, {n}, {init_iteration}, {last_term_limit}) = {cnt} (getting from cache)")
             return cnt
     else:
-        ceil = 1 << 32
+        # some big integer like 1 << 32:
+        ceil = s
 
     part = init_part
     term_idx = n - 4
@@ -95,7 +100,7 @@ def get_part_cnt(init_part: List[int], s: int, idx: int, last_term_limit: int = 
                 is_valid = False
                 _cnt = 0
 
-    if 0 < last_term_limit < s:
+    if last_term_limit > 0:
         _mongo.add_part_ceil(s, n, init_iteration, last_term_limit, cnt)
         logger.info(f"P({s}, {n}, {init_iteration}, {last_term_limit}) = {cnt}")
 
@@ -116,27 +121,31 @@ def get_part_count(s: int, n: int, term_idx: int, iteration: int, ceil: int) -> 
 
 def get_part_count_ceil(s: int, n: int, iteration: int, ceil: int) -> int:
     """
-    P(S, n, i, c) = P(S, n, i, c-1) + P(S-i-c+1,n-2,i+1,c-1)
+    P(S, n, i, c) = P(S, n, i, c-1) + P(S-c+1,n-1,i,c-1)
     term_idx = 0, it means we count all for the first term's iteration.
     """
     if not is_valid(s, n, 0, iteration):
         return 0
 
+    if ceil < n:
+        raise Exception(f"so small ceil is not expected: P({s}, {n}, {iteration}, {ceil})")
+
+    _max_ceil = get_min_part_last_term(s, n, iteration)
+
+    if ceil > _max_ceil:
+        return get_part_count(s, n, 0, iteration, 0)
+
     _mongo = get_client()
 
-    if 0 < ceil < s:
-        cnt = _mongo.get_part_ceil(s, n, iteration, ceil)
-        if cnt:
-            logger.info(f"P({s}, {n}, {iteration}, {ceil}) = {cnt} (getting from cache)")
-            return cnt
+    cnt = _mongo.get_part_ceil(s, n, iteration, ceil)
+    if cnt:
+        logger.info(f"P({s}, {n}, {iteration}, {ceil}) = {cnt} (getting from cache)")
+        return cnt
 
     _cnt = get_part_count(s, n, 0, iteration, ceil-1)
-    if _cnt == 0:
-        return _cnt
+    _cnt += get_part_count(s - ceil + 1, n - 1, 0, iteration, ceil - 1)
 
-    _cnt += get_part_count(s - iteration - ceil + 1, n - 2, 0, iteration + 1, ceil - 1)
-
-    if _cnt and 0 < ceil < s:
+    if _cnt:
         _mongo.add_part_ceil(s, n, iteration, ceil, _cnt)
         logger.info(f"P({s}, {n}, {iteration}, {ceil}) = {_cnt}")
     return _cnt
@@ -324,6 +333,8 @@ def _get_edge_partitions_by_term_iteration_cnt(s: int, n: int, term_idx: int, it
         if _sum_min_gen < _sum_min:
             _sum_min = _sum_min_gen
 
+    #print("----------------------------")
+    #print("sum: ", _sum_min, _sum_max)
     _sum = _sum_max
     while _sum >= _sum_min:
         if _sum % 2 == 0:
@@ -332,7 +343,12 @@ def _get_edge_partitions_by_term_iteration_cnt(s: int, n: int, term_idx: int, it
 
         _s = s - left_sum - _sum
         med = _sum // 2
+        #__cnt = get_part_count_ceil(_s, middle_terms_cnt, iteration+1, med)
+        #__cnt = get_part_count(_s, middle_terms_cnt, 0, iteration+1, med)
+        #print(f"calc P({_s}, {middle_terms_cnt}, {iteration+1}, {med}) = {__cnt}")
+        #cnt += __cnt
         cnt += get_part_count_ceil(_s, middle_terms_cnt, iteration+1, med)
+        #cnt += get_part_count(_s, middle_terms_cnt, 0, iteration+1, med)
         _sum -= 1
 
     return cnt
