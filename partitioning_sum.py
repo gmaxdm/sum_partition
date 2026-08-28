@@ -423,8 +423,8 @@ def main():
 
     #logger.info("calc_sum_partitions_count_by_diff(300, 400, 33114319, 20)")
     #calc_sum_partitions_count_by_diff(300, 400, 33114319, 20)
-    logger.info("calc_sum_partitions_count_by_diff(300, 400, 6194373023, 10)")
-    calc_sum_partitions_count_by_diff(300, 400, 6194373023, 10)
+    logger.info("calc_sum_partitions_count_by_diff(300, 500, 6194373023, 10)")
+    calc_sum_partitions_count_by_diff(300, 500, 6194373023, 10)
     #calc_sum_partition_count_by_formula(1000, 10)
     #calc_sum_partitions_count(31000, 40960, 497109647, 20)
     #parts = _run_diff_serial(50, 7)

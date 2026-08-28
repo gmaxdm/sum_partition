@@ -1,8 +1,12 @@
 import pymongo
+import logging
 
 from bson import ObjectId
 
 from .conf import MONGODB, CNT_MIN
+
+
+logger = logging.getLogger('mongo')
 
 
 class MongoDB:
@@ -57,13 +61,32 @@ class MongoDB:
             return res["cnt"]
         return 0
 
+    def __insert(self, col, doc):
+        try:
+            col.insert_one(doc)
+        except pymongo.errors.DuplicateKeyError as err:
+            logger.info(f"doc already exists: {doc}")
+            _cnt = 0
+            logger.info(f"cnt in doc: {_cnt}")
+            logger.info(f"cnt inserted: {cnt}")
+            logger.error(err)
+
     def add_part(self, s: int, n: int, iteration: int, cnt: int):
         """
         assume term_idx = 0
         """
         if cnt < CNT_MIN:
             return
-        self._db.part.insert_one({"s": s, "n": n, "i": iteration, "cnt": cnt})
+
+        doc = {"s": s, "n": n, "i": iteration, "cnt": cnt}
+        try:
+            self._db.part.insert_one(doc)
+        except pymongo.errors.DuplicateKeyError as err:
+            logger.info(f"doc already exists: {doc}")
+            _cnt = self.get_part(s, n)
+            logger.info(f"cnt in doc: {_cnt}")
+            logger.info(f"cnt inserted: {cnt}")
+            logger.error(err)
 
     def add_part_ceil(self, s: int, n: int, iteration: int, ceil: int, cnt: int):
         """
@@ -71,12 +94,30 @@ class MongoDB:
         """
         if cnt < CNT_MIN:
             return
-        self._db.part_ceil.insert_one({"s": s, "n": n, "i": iteration, "c": ceil, "cnt": cnt})
+
+        doc = {"s": s, "n": n, "i": iteration, "c": ceil, "cnt": cnt}
+        try:
+            self._db.part_ceil.insert_one(doc)
+        except pymongo.errors.DuplicateKeyError as err:
+            logger.info(f"doc already exists: {doc}")
+            _cnt = self.get_part_ceil(s, n, iteration, ceil)
+            logger.info(f"cnt in doc: {_cnt}")
+            logger.info(f"cnt inserted: {cnt}")
+            logger.error(err)
 
     def add_diff(self, s: int, n: int, cnt: int):
         if cnt < CNT_MIN:
             return
-        self._db.diff.insert_one({"s": s, "n": n, "cnt": cnt})
+
+        doc = {"s": s, "n": n, "cnt": cnt}
+        try:
+            self._db.diff.insert_one(doc)
+        except pymongo.errors.DuplicateKeyError as err:
+            logger.info(f"doc already exists: {doc}")
+            _cnt = self.get_diff(s, n)
+            logger.info(f"cnt in doc: {_cnt}")
+            logger.info(f"cnt inserted: {cnt}")
+            logger.error(err)
 
     def add_edge(self, s: int, n: int, iteration: int, cnt: int):
         """
@@ -84,7 +125,16 @@ class MongoDB:
         """
         if cnt < CNT_MIN:
             return
-        self._db.edge.insert_one({"s": s, "n": n, "i": iteration, "cnt": cnt})
+
+        doc = {"s": s, "n": n, "i": iteration, "cnt": cnt}
+        try:
+            self._db.edge.insert_one(doc)
+        except pymongo.errors.DuplicateKeyError as err:
+            logger.info(f"doc already exists: {doc}")
+            _cnt = self.get_edge(s, n, iteration)
+            logger.info(f"cnt in doc: {_cnt}")
+            logger.info(f"cnt inserted: {cnt}")
+            logger.error(err)
 
 
 MongoClient = None
