@@ -1,10 +1,11 @@
 import pytest
 
-from partition_count import (gen_next_part, get_part_cnt,
+from partition_count import (gen_next_part, get_part_cnt, get_part_count,
+                             get_part_count_ceil,
                              gen_edge_partitions_by_term_iteration,
                              get_edge_partitions_by_term_iteration_cnt,
                              SmallLengthPartitionsStopIteration)
-from partition_utils import get_term_iteration_interval
+from partition_utils import get_term_interval
 from utils import save_to_csv
 
 
@@ -68,33 +69,37 @@ def test_gen_next_part_last_term_limit():
 
 
 def test_get_part_cnt():
+    init_part = [1, 2, 3, 4, 5]
+    cnt = get_part_cnt(init_part, 15, 0)
+    assert cnt == 1
+
     init_part = [1, 2, 3, 4, 15]
-    cnt = get_part_cnt(init_part, 25, 0, 25)
+    cnt = get_part_cnt(init_part, 25, 0)
     assert cnt == 30
 
     init_part = [1, 3, 4, 5, 12]
-    cnt = get_part_cnt(init_part, 25, 1, 25)
+    cnt = get_part_cnt(init_part, 25, 1)
     assert cnt == 9
 
     init_part = [1, 2, 4, 5, 9]
     with pytest.raises(ValueError):
         # idx should be less than n-4
-        _ = get_part_cnt(init_part, 21, 2, 21)
+        _ = get_part_cnt(init_part, 21, 2)
 
     init_part = [1, 2, 3, 4, 90]
-    cnt = get_part_cnt(init_part, 100, 0, 100)
+    cnt = get_part_cnt(init_part, 100, 0)
     assert cnt == 25337
 
     init_part = [1, 2, 3, 4, 191]
-    cnt = get_part_cnt(init_part, 201, 0, 201)
+    cnt = get_part_cnt(init_part, 201, 0)
     assert cnt == 486424
 
     init_part = [1, 2, 3, 4, 5, 6, 29]
-    cnt = get_part_cnt(init_part, 50, 0, 50)
+    cnt = get_part_cnt(init_part, 50, 0)
     assert cnt == 522
 
     init_part = [1, 2, 3, 94]
-    cnt = get_part_cnt(init_part, 100, 0, 100)
+    cnt = get_part_cnt(init_part, 100, 0)
     assert cnt == 5952
 
 
@@ -102,6 +107,38 @@ def test_get_part_cnt_last_term_limit():
     init_part = [1, 2, 3, 4, 15]
     cnt = get_part_cnt(init_part, 25, 0, 9)
     assert cnt == 5
+
+
+def test_get_part_count_ceil():
+    init_part = [1, 2, 3, 4, 5, 6, 29]
+    _cnt = 0
+    # count parts for term_idx = 0, iteration >= 3 where last term less than 13:
+    _cnt3 = 0
+    for p in gen_next_part(init_part, 50, 0, 50):
+        if p[-1] < 13:
+            _cnt += 1
+            if p[0] >= 3:
+                _cnt3 += 1
+
+    assert _cnt == 39
+    assert _cnt3 == 9
+    # for all iterations:
+    cnt = get_part_cnt(init_part, 50, 0, 13)
+    assert cnt == _cnt
+
+    cnt = get_part_count(50, 7, 0, 1, 13)
+    assert cnt == _cnt
+
+    # for all iterations:
+    cnt = get_part_count_ceil(50, 7, 1, 13)
+    assert cnt == _cnt
+
+    # for iterations from 3 and above:
+    cnt = get_part_count_ceil(50, 7, 3, 13)
+    assert cnt == _cnt3
+
+    cnt = get_part_count_ceil(27, 4, 3, 10)
+    assert cnt == 3
 
 
 def test_gen_edge_partitions_by_term_iteration():
@@ -115,18 +152,10 @@ def test_gen_edge_partitions_by_term_iteration():
 
 
 def test_get_edge_partitions_by_term_iteration_cnt():
-    cnt = 0
-    try:
-        cnt = get_edge_partitions_by_term_iteration_cnt(21, 5, 0, 1)
-    except SmallLengthPartitionsStopIteration as e:
-        cnt += e.args[0]
+    cnt, _ = get_edge_partitions_by_term_iteration_cnt(21, 5, 0, 1)
     assert cnt == 3
 
-    cnt = 0
-    try:
-        cnt = get_edge_partitions_by_term_iteration_cnt(201, 5, 0, 1)
-    except SmallLengthPartitionsStopIteration as e:
-        cnt += e.args[0]
+    cnt, _ = get_edge_partitions_by_term_iteration_cnt(201, 5, 0, 1)
     assert cnt == 9987
 
 
@@ -137,19 +166,16 @@ def test_get_edge_partitions_by_term_iteration_cnt_diff():
     cnt = 0
     s = 50
     n = 7
-    _min, _max = get_term_iteration_interval(s, n, 0)
+    _min, _max = get_term_interval(s, n, 0)
     for j in range(_min, _max):
-        try:
-            cnt += get_edge_partitions_by_term_iteration_cnt(s, n, 0, j)
-        except SmallLengthPartitionsStopIteration as e:
-            cnt += e.args[0]
+        _cnt, is_stop = get_edge_partitions_by_term_iteration_cnt(s, n, 0, j)
+        cnt += _cnt
+        if is_stop:
+            break
     assert cnt == _diff  # 86
 
 
 def test_get_edge_partitions_by_term_iteration_cnt_play():
-    cnt = 0
-    try:
-        cnt = get_edge_partitions_by_term_iteration_cnt(500, 20, 0, 1)
-    except SmallLengthPartitionsStopIteration as e:
-        cnt += e.args[0]
+    cnt, _ = get_edge_partitions_by_term_iteration_cnt(500, 20, 0, 1)
     assert cnt == 9987
+

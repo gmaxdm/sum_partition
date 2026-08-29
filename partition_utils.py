@@ -9,6 +9,14 @@ def ap_sum(a: int, n: int) -> int:
     return (n * (2 * a + n - 1)) // 2
 
 
+def is_valid(s: int, n: int, term_idx: int, iteration: int) -> bool:
+    if s <= 0:
+        return False
+    if n < 2:
+        return False
+    return True
+
+
 def get_ap_left_part_sum(term_idx: int, iteration: int, n: int) -> int:
     """
     get sum of a min (arithmetic progression) partition of term_idx and iteration (without the last item).
@@ -46,6 +54,13 @@ def get_tail_partition_iteration_cnt(s: int, left_part_sum: int, iteration: int,
     return p1_f - _s // 2
 
 
+def get_min_part_last_term(s: int, n: int, iteration: int) -> int:
+    """
+    term_idx = 0
+    """
+    return s - ap_sum(iteration, n-1)
+
+
 def get_init_partition(s: int, n: int, term_idx: int, iteration: int) -> List[int]:
     """
     Init a new partition for the term_idx index and iteration.
@@ -55,8 +70,10 @@ def get_init_partition(s: int, n: int, term_idx: int, iteration: int) -> List[in
     :param iteration:
     :return:
     """
-    if n == 1:
-        raise Exception(f"term number should be at least 2")
+    if s <= 0:
+        raise ValueError("s should be positive")
+    if n < 2:
+        raise ValueError("term number should be at least 2")
 
     _part = [0] * n
     for i in range(term_idx):
@@ -104,7 +121,7 @@ def get_partition_by_term_max_last(s: int, n: int, term_idx: int) -> List[int]:
     if term_idx >= n-1:
         raise Exception("addend index exceeds n")
 
-    _, _max = get_term_iteration_interval(s, n, term_idx)
+    _, _max = get_term_interval(s, n, term_idx)
     _part_ap_last = get_partition_by_term_iteration_ap_max_last(s, n, term_idx, _max)
     _diff = _part_ap_last[-2] - _part_ap_last[-3]
     if _diff == 1:
@@ -132,7 +149,7 @@ def get_partition_by_term_ap_max_last(s: int, n: int, term_idx: int) -> List[int
     if term_idx >= n-1:
         raise Exception("addend index exceeds n")
 
-    _, _max = get_term_iteration_interval(s, n, term_idx)
+    _, _max = get_term_interval(s, n, term_idx)
     return get_partition_by_term_iteration_ap_min_last(s, n, term_idx, _max)
 
 
@@ -169,7 +186,7 @@ def get_partition_by_term_iteration_ap_min_last(s: int, n: int, term_idx: int, i
     """
     if term_idx >= n-1:
         raise ValueError("term index exceeds n")
-    _min, _max = get_term_iteration_interval(s, n, term_idx)
+    _min, _max = get_term_interval(s, n, term_idx)
     if iteration < _min or iteration > _max:
         raise ValueError("term iteration exceeds iteration interval")
 
@@ -218,7 +235,7 @@ def get_partition_by_term_iteration_ap_min_first(s: int, n: int, term_idx: int, 
 def get_partition_by_term_iteration_ap_min_last_term(s: int, n: int, term_idx: int, iteration: int) -> int:
     if term_idx >= n-1:
         raise Exception("term index exceeds n")
-    _min, _max = get_term_iteration_interval(s, n, term_idx)
+    _min, _max = get_term_interval(s, n, term_idx)
     if iteration < _min or iteration > _max:
         raise Exception("term iteration exceeds iteration interval")
 
@@ -237,11 +254,11 @@ def get_partition_by_term_iteration_ap_min_last_term(s: int, n: int, term_idx: i
     return _last
 
 
-def get_term_iteration_interval(s: int, n: int, term_idx: int) -> Tuple[int, int]:
+def get_term_interval(s: int, n: int, term_idx: int) -> Tuple[int, int]:
     """
     :param s:
     :param n:
-    :param term_idx:
+    :param term_idx: term index from 0 to n-2 included
     :return:
     """
     k = term_idx

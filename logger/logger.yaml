@@ -1,0 +1,44 @@
+version: 1
+formatters:
+  simple:
+    format: '%(asctime)s %(message)s'
+  standard:
+    format: '%(asctime)s [%(levelname)s] %(pathname)s:%(lineno)s %(message)s'
+  error:
+    format: "%(levelname)s <PID %(process)d:%(processName)s> %(name)s.%(funcName)s(): %(message)s"
+handlers:
+  console:
+    class: logging.StreamHandler
+    level: INFO
+    formatter: standard
+    stream: ext://sys.stdout
+  file:
+    class: logging.handlers.RotatingFileHandler
+    level: INFO
+    formatter: simple
+    filename: ~/logs/sum_part.log
+    maxBytes: 10485760 # 10MB
+    backupCount: 2
+    encoding: utf8
+loggers:
+  partition:
+    level: INFO
+    handlers: [file]
+    #handlers: [console]
+    propagate: no
+  mongo:
+    level: ERROR
+    handlers: [file]
+    propagate: no
+  <module>:
+    level: INFO
+    handlers: [console]
+    propagate: no
+  <module.x>:
+    level: INFO
+    handlers: [console]
+    propagate: yes
+root:
+  level: INFO
+  handlers: [console]
+  propogate: yes
