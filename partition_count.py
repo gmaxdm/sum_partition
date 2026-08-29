@@ -4,6 +4,7 @@ import logging
 from typing import List, Generator, Tuple
 
 from mongo.client import get_client
+from bench import BenchmarkTags
 from partition_utils import (ap_sum, get_init_partition, get_term_interval,
                              get_partition_by_term_iteration_ap_min_last,
                              get_partition_by_term_iteration_ap_max_last,
@@ -18,6 +19,7 @@ class SmallLengthPartitionsStopIteration(Exception):
     pass
 
 
+@BenchmarkTags(tags="PC")
 def get_part_cnt(init_part: List[int], s: int, idx: int, last_term_limit: int = 0) -> int:
     """
     increment the most right term n-1 (before the result sum term - last),
@@ -107,8 +109,8 @@ def get_part_cnt(init_part: List[int], s: int, idx: int, last_term_limit: int = 
     return cnt
 
 
-def get_part_count(s: int, n: int, term_idx: int, iteration: int, ceil: int) -> int:
-    """ returns all partitions for term_idx starting from iteration. Uses ceil.
+def get_part_count(s: int, n: int, term_idx: int, iteration: int, ceil: int = 0) -> int:
+    """ returns all partitions for term_idx starting from iteration.
     """
     cnt = 0
     try:
@@ -354,6 +356,7 @@ def _get_edge_partitions_by_term_iteration_cnt(s: int, n: int, term_idx: int, it
     return cnt
 
 
+@BenchmarkTags(tags="E")
 def get_edge_partitions_by_term_iteration_cnt(s: int, n: int, term_idx: int, iteration: int) -> Tuple[int, bool]:
     """
     "E({s}, {n}, {term_idx}, {iteration}) = {cnt}"
@@ -363,12 +366,22 @@ def get_edge_partitions_by_term_iteration_cnt(s: int, n: int, term_idx: int, ite
     :param iteration:
     :return:
     """
-    _cnt = 0
     is_stop = False
+    _mongo = get_client()
+    if term_idx == 0:
+        _cnt = _mongo.get_edge(s, n, iteration)
+        if _cnt:
+            logger.info(f"E({s}, {n}, 0, {iteration}) = {_cnt} (getting from cache)")
+            return _cnt, is_stop
+
     try:
         _cnt = _get_edge_partitions_by_term_iteration_cnt(s, n, term_idx, iteration)
     except SmallLengthPartitionsStopIteration as e:
         _cnt = e.args[0]
         is_stop = True
+
+    if term_idx == 0:
+        _mongo.add_edge(s, n, iteration, _cnt)
+        logger.info(f"E({s}, {n}, 0, {iteration}) = {_cnt}")
     return _cnt, is_stop
 

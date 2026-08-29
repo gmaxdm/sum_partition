@@ -24,6 +24,7 @@ loggers:
   partition:
     level: INFO
     handlers: [file]
+    #handlers: [console]
     propagate: no
   mongo:
     level: ERROR

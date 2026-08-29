@@ -15,7 +15,7 @@ from typing import List
 from multiprocessing import Pool
 
 from mongo.client import init_mongo, get_client
-from partition_count import (get_part_cnt, gen_next_part,
+from partition_count import (get_part_count, gen_next_part,
                              gen_edge_partitions_by_term_iteration,
                              get_edge_partitions_by_term_iteration_cnt,
                              SmallLengthPartitionsStopIteration)
@@ -24,6 +24,7 @@ from partition_utils import (ap_sum, get_ap_left_part_sum, get_term_interval,
 from compression_utils import (gen_ordered_numbers, compress_layer, gen_bytes, split_by_layers,
                                print_layers_stat, NUM_LEN)
 from utils import save_to_csv
+from bench import benchmark, BenchmarkTags
 from logger.logger import setup_logging
 
 
@@ -121,18 +122,6 @@ def _run_serial(s:int, n: int) -> List[List[int]]:
     return parts
 
 
-def sum_partition_idx_iteration_count(s: int, n: int, term_idx: int, iteration: int) -> int:
-    logger.info(f"s: {s}, n: {n}, term_idx: {term_idx}, iteration: {iteration}")
-    try:
-        _init_part = get_init_partition(s, n, term_idx, iteration)
-    except ValueError:
-        return 0
-
-    logger.info("init part", _init_part)
-    cnt = get_part_cnt(_init_part, s, term_idx)
-    return cnt
-
-
 def sum_partition_cnt(s: int, n: int) -> int:
     """
     calc sum partitions count. Use Pool of workers. Each worker takes the partitions by index.
@@ -146,11 +135,11 @@ def sum_partition_cnt(s: int, n: int) -> int:
 
     _args = []
     for i in range(n - 3):
-        _args.append((s, n, i, i + 2))
+        _args.append((s, n, i, i + 2, 0))
 
     cnt = 0
     with Pool(processes=multiprocessing.cpu_count()) as pool:
-        for res in pool.starmap(sum_partition_idx_iteration_count, _args):
+        for res in pool.starmap(get_part_count, _args):
             cnt += res
     logger.info(cnt)
     # for term_idx == n-3 we need to have iteration i
@@ -281,13 +270,6 @@ def partitioning_try():
     logger.info("Count:", _cnt)
 
 
-def partitioning_cnt_try():
-    init_part = get_init_partition(200, 10, 7, 9)
-    logger.info("init:", init_part)
-    cnt = get_part_cnt(init_part, 200, 7)
-    logger.info("Count:", cnt)
-
-
 def save_sum_partitions(s: int, n: int, save_csv: bool=False):
     parts = sum_partitioning(s, n)
     #logger.info(parts)
@@ -303,9 +285,12 @@ def save_sum_partitions_diff(s: int, n: int, save_csv: bool=False):
         save_to_csv(f"sum_partition/csv/{s}_{n}_diff.csv", parts)
 
 
+@BenchmarkTags(tags="D")
 def get_partition_diff_by_term_cnt(s: int, n: int) -> int:
     """
-    get partitions that are new in S in difference with S-1
+    get partitions that are new in S in difference with S-1;
+    calcs edge partitions per each iteration in get_term_interaval
+        for term_idx = 0
     :param s:
     :param n:
     :return:
@@ -325,15 +310,7 @@ def get_partition_diff_by_term_cnt(s: int, n: int) -> int:
     _min, _max = get_term_interval(s, n, 0)
     logger.info(f"s: {s}, n: {n}, min: {_min}, max: {_max}")
     for j in range(_min, _max + 1):
-        _cnt = _mongo.get_edge(s, n, j)
-        if _cnt:
-            cnt += _cnt
-            logger.info(f"E({s}, {n}, 0, {j}) = {_cnt} (getting from cache)")
-            continue
-
         _cnt, is_stop = get_edge_partitions_by_term_iteration_cnt(s, n, 0, j)
-        _mongo.add_edge(s, n, j, _cnt)
-        logger.info(f"E({s}, {n}, 0, {j}) = {_cnt}")
         cnt += _cnt
         if is_stop:
             break
@@ -342,6 +319,7 @@ def get_partition_diff_by_term_cnt(s: int, n: int) -> int:
     return cnt
 
 
+@BenchmarkTags(tags="P")
 def calc_sum_partitions_count_by_diff(sum_from: int, sum_to: int, from_cnt: int, n: int) -> int:
     _mongo = get_client()
     cnt = _mongo.get_part(sum_to, n)
@@ -402,20 +380,11 @@ def partition_index():
     logger.info("P(101, 5, 0, 15, 30) - ", idx)
 
 
+@benchmark
 def main():
-    start_time = time.perf_counter()
-
-    #logger.info("get_part_cnt([1, 2, 3, 4, 5, 6, 7, 8, 9, 455], 500, 0)")
-    #cnt = get_part_cnt([1, 2, 3, 4, 5, 6, 7, 8, 9, 455], 500, 0)
-    #if cnt == 886831799718:
-    #    logger.info("test has passed OK")
-    #else:
-    #    logger.info(f"test failed: 886831799718 (expected) != {cnt} (actual)")
-
     #run_compressions(layers[0])
     #compression_try()
     #partitioning_try()
-    #partitioning_cnt_try()
     #logger.info("sum_partition_cnt(500, 10)")
     #sum_partition_cnt(500, 10)
     #save_sum_partitions(1000, 10, save_csv=False)
@@ -434,8 +403,6 @@ def main():
     #s = find_partition_diff_by_idx(50, 7, 4)
     #logger.info(s)
     #logger.info(len(s))
-    end_time = time.perf_counter()
-    logger.info(f"Execution time: {end_time - start_time:.6f} seconds")
 
 
 if __name__ == "__main__":
