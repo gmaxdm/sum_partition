@@ -1,12 +1,11 @@
 import pytest
 
 from partition_count import (gen_next_part, get_part_cnt, get_part_count,
-                             get_part_count_ceil,
+                             get_part_count_ceil, get_max_partition,
+                             get_term_iteration_max_part,
                              gen_edge_partitions_by_term_iteration,
-                             get_edge_partitions_by_term_iteration_cnt,
-                             SmallLengthPartitionsStopIteration)
+                             get_edge_partitions_by_term_iteration_cnt)
 from partition_utils import get_term_interval
-from utils import save_to_csv
 
 
 def test_gen_next_part():
@@ -173,6 +172,19 @@ def test_get_edge_partitions_by_term_iteration_cnt_diff():
         if is_stop:
             break
     assert cnt == _diff  # 86
+
+
+def test_get_term_iteration_max_part():
+    _last = get_term_iteration_max_part(50, 7, 1, 5)
+    assert _last == [1, 5, 6, 8, 9, 10, 11]
+
+
+def test_get_max_partition():
+    _last = get_max_partition(25, 5)
+    assert _last == [3, 4, 5, 6, 7]
+
+    _last = get_max_partition(100, 5)
+    assert _last == [18, 19, 20, 21, 22]
 
 
 def test_get_edge_partitions_by_term_iteration_cnt_play():

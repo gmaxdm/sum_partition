@@ -10,11 +10,13 @@
 import multiprocessing
 import time
 import logging
+import os
+import yaml
 
-from typing import List
+from typing import List, Dict, Any
 from multiprocessing import Pool
 
-from mongo.client import init_mongo, get_client
+from mongo.client import get_client
 from partition_count import (get_part_count, gen_next_part,
                              gen_edge_partitions_by_term_iteration,
                              get_edge_partitions_by_term_iteration_cnt,
@@ -328,7 +330,7 @@ def calc_sum_partitions_count_by_diff(sum_from: int, sum_to: int, from_cnt: int,
     if sum_from < _min_sum:
         sum_from = _min_sum
         cnt = 1
-    with Pool(processes=multiprocessing.cpu_count(), initializer=init_mongo) as pool:
+    with Pool(processes=multiprocessing.cpu_count(), initializer=get_client) as pool:
         for res in pool.starmap(get_partition_diff_by_term_cnt, [(_s, n) for _s in range(sum_from+1, sum_to+1)]):
             cnt += res
     _mongo.add_part(sum_to, n, 1, cnt)
@@ -376,8 +378,26 @@ def partition_index():
     logger.info("P(101, 5, 0, 15, 30) - ", idx)
 
 
+def load_conf(path: str) -> Dict[str, Any]:
+    with open(path, 'rt') as f:
+        config = yaml.safe_load(f.read())
+    # read local conf:
+    # assume local.yaml is located in config
+    local_path = os.path.join(os.path.split(path)[0], "local.yaml")
+    if os.path.exists(local_path):
+        with open(local_path, 'rt') as f:
+            try:
+                local_config = yaml.safe_load(f.read())
+                config.update(local_config)
+            except Exception as e:
+                print(e)
+                print(f"Error in loading local config. Using {path}")
+    return config
+
+
 @benchmark
 def main():
+    conf = load_conf("config/base.yaml")
     #run_compressions(layers[0])
     #compression_try()
     #partitioning_try()
@@ -388,8 +408,10 @@ def main():
 
     #logger.info("calc_sum_partitions_count_by_diff(300, 400, 33114319, 20)")
     #calc_sum_partitions_count_by_diff(300, 400, 33114319, 20)
+
     logger.info("calc_sum_partitions_count_by_diff(300, 500, 15621068350, 15)")
     calc_sum_partitions_count_by_diff(300, 500, 15621068350, 15)
+
     #calc_sum_partition_count_by_formula(1000, 10)
     #calc_sum_partitions_count(31000, 40960, 497109647, 20)
     #parts = _run_diff_serial(50, 7)

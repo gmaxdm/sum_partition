@@ -23,8 +23,8 @@ handlers:
 loggers:
   partition:
     level: INFO
-    handlers: [file]
-    #handlers: [console]
+    #handlers: [file]
+    handlers: [console]
     propagate: no
   mongo:
     level: ERROR
@@ -41,4 +41,4 @@ loggers:
 root:
   level: INFO
   handlers: [console]
-  propogate: yes
+  propagate: yes

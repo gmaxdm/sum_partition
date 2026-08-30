@@ -1,15 +1,82 @@
 import pymongo
 import logging
 
-from bson import ObjectId
+from abc import ABC, abstractmethod
 
-from .conf import MONGODB, CNT_MIN
+from .conf import MONGODB, CNT_MIN, ENV
 
 
 logger = logging.getLogger('mongo')
 
 
-class MongoDB:
+class MongoAbstractDB(ABC):
+    @abstractmethod
+    def init_db(self):
+        pass
+
+    @abstractmethod
+    def get_part(self, s: int, n: int) -> int:
+        return 0
+
+    @abstractmethod
+    def get_part_ceil(self, s: int, n: int, iteration: int, ceil: int) -> int:
+        return 0
+
+    @abstractmethod
+    def get_diff(self, s: int, n: int) -> int:
+        return 0
+
+    @abstractmethod
+    def get_edge(self, s: int, n: int, iteration: int) -> int:
+        return 0
+
+    @abstractmethod
+    def add_part(self, s: int, n: int, iteration: int, cnt: int):
+        pass
+
+    @abstractmethod
+    def add_part_ceil(self, s: int, n: int, iteration: int, ceil: int, cnt: int):
+        pass
+
+    @abstractmethod
+    def add_diff(self, s: int, n: int, cnt: int):
+        pass
+
+    @abstractmethod
+    def add_edge(self, s: int, n: int, iteration: int, cnt: int):
+        pass
+
+
+class MongoMockDB(MongoAbstractDB):
+    def init_db(self):
+        pass
+
+    def get_part(self, s: int, n: int) -> int:
+        return 0
+
+    def get_part_ceil(self, s: int, n: int, iteration: int, ceil: int) -> int:
+        return 0
+
+    def get_diff(self, s: int, n: int) -> int:
+        return 0
+
+    def get_edge(self, s: int, n: int, iteration: int) -> int:
+        return 0
+
+    def add_part(self, s: int, n: int, iteration: int, cnt: int):
+        pass
+
+    def add_part_ceil(self, s: int, n: int, iteration: int, ceil: int, cnt: int):
+        pass
+
+    def add_diff(self, s: int, n: int, cnt: int):
+        pass
+
+    def add_edge(self, s: int, n: int, iteration: int, cnt: int):
+        pass
+
+
+class MongoDB(MongoAbstractDB):
     def __init__(self):
         self._client = pymongo.MongoClient(MONGODB["host"],
                                            MONGODB["port"],
@@ -60,16 +127,6 @@ class MongoDB:
         if res:
             return res["cnt"]
         return 0
-
-    def __insert(self, col, doc):
-        try:
-            col.insert_one(doc)
-        except pymongo.errors.DuplicateKeyError as err:
-            logger.info(f"doc already exists: {doc}")
-            _cnt = 0
-            logger.info(f"cnt in doc: {_cnt}")
-            logger.info(f"cnt inserted: {cnt}")
-            logger.error(err)
 
     def add_part(self, s: int, n: int, iteration: int, cnt: int):
         """
@@ -140,14 +197,11 @@ class MongoDB:
 MongoClient = None
 
 
-def init_mongo():
-    global MongoClient
-    MongoClient = MongoDB()
-
-
-def get_client() -> MongoDB:
+def get_client() -> MongoDB | MongoMockDB:
     global MongoClient
     if MongoClient is None:
-        MongoClient = MongoDB()
+        if ENV == "DEV":
+            MongoClient = MongoMockDB()
+        else:
+            MongoClient = MongoDB()
     return MongoClient
-

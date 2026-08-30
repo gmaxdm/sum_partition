@@ -205,6 +205,21 @@ def gen_next_part(init_part: List[int], s: int, idx: int, last_term_limit: int) 
             is_valid = False
 
 
+def get_term_iteration_max_part(s: int, n: int, term_idx: int, iteration: int)-> List[int]:
+    _part_first = get_partition_by_term_iteration_ap_min_last(s, n, term_idx, iteration)
+    _part_last = get_partition_by_term_iteration_ap_max_last(s, n, term_idx, iteration)
+
+    _last = _part_last
+    for _part in gen_next_part(_part_last, s, term_idx + 1, s):
+        _last = _part
+    return _last
+
+
+def get_max_partition(s: int, n: int) -> List[int]:
+    _min, _max = get_term_interval(s, n, 0)
+    return get_term_iteration_max_part(s, n, 0, _max)
+
+
 def gen_edge_partitions_by_term_iteration(s: int, n: int, term_idx: int, iteration: int) -> Generator:
     """
     edge partition: p[-1] - p[-2] == 1
