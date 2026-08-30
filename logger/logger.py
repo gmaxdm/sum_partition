@@ -6,10 +6,9 @@ import coloredlogs
 
 
 def setup_logging(path='logger.yaml', default_level=logging.INFO):
-    """
-    | **@author:** Prathyush SP
-    | Logging Setup
-    """
+    default_format = '%(asctime)s [%(levelname)s] %(pathname)s:%(lineno)s %(message)s'
+    logging.basicConfig(level=default_level, format=default_format)
+    coloredlogs.install(level=default_level)
     if os.path.exists(path):
         with open(path, 'rt') as f:
             try:
@@ -19,10 +18,6 @@ def setup_logging(path='logger.yaml', default_level=logging.INFO):
             except Exception as e:
                 print(e)
                 print('Error in Logging Configuration. Using default configs')
-                logging.basicConfig(level=default_level)
-                coloredlogs.install(level=default_level)
     else:
-        logging.basicConfig(level=default_level)
-        coloredlogs.install(level=default_level)
         print('Failed to load configuration file. Using default configs')
 

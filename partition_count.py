@@ -145,7 +145,7 @@ def get_part_count_ceil(s: int, n: int, iteration: int, ceil: int) -> int:
         return cnt
 
     _cnt = get_part_count(s, n, 0, iteration, ceil-1)
-    _cnt += get_part_count(s - ceil + 1, n - 1, 0, iteration, ceil - 1)
+    _cnt += get_part_count(s - ceil + 1, n-1, 0, iteration, ceil-1)
 
     if _cnt:
         _mongo.add_part_ceil(s, n, iteration, ceil, _cnt)
