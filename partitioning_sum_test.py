@@ -13,6 +13,9 @@ PARAMS = [
 def testcase(request):
     return request.param
 
+def test_testcase(testcase):
+    pass
+
 
 def test_sum_partitioning():
     parts = sum_partitioning(15, 5)
@@ -119,6 +122,3 @@ def test_get_partitions_index_by_term_iteration():
 
 #def test_save_sum_partitions():
     #save_sum_partitions(250, 20, save_csv=True)
-
-def test_testcase(testcase):
-    pass

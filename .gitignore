@@ -1,5 +1,6 @@
 # MB staff
 .DS_Store
+*.ods#
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -32,15 +32,11 @@ setup_logging(path='logger/logger.yaml')
 logger = logging.getLogger('partition')
 
 
-class Solution:
-    def partitioningSum(self, candidates: List[int], target: int) -> List[List[int]]:
-        pass
-
-
 def sum_partitioning(s: int, n: int) -> List[List[int]]:
     """
     Returns partitionings with distinct n terms in ascended order only.
     Part(20,5)
+
     idx=3
     1	2	3	4	10
     1	2	3	5	9
