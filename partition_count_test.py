@@ -5,7 +5,7 @@ from partition_count import (gen_next_part, get_part_cnt, get_part_count,
                              get_term_iteration_max_part,
                              gen_edge_partitions_by_term_iteration,
                              get_edge_partitions_by_term_iteration_cnt)
-from partition_utils import get_term_interval
+from partition_utils import (get_term_interval, get_init_partition)
 
 
 def test_gen_next_part():
@@ -106,6 +106,17 @@ def test_get_part_cnt_last_term_limit():
     init_part = [1, 2, 3, 4, 15]
     cnt = get_part_cnt(init_part, 25, 0, 9)
     assert cnt == 5
+
+    # P(287, 12, 2, 31) = 15
+    # too long ~20 mins
+    # P(287, 12, 2) = 6267800603
+    # too long ~23 mins
+    #_init_part = get_init_partition(287, 12, 0, 2)
+    # [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 210]
+    #cnt = get_part_cnt(_init_part, 287, 0)
+    #assert cnt == 6267800603
+    #cnt = get_part_cnt(_init_part, 287, 0, 31)
+    #assert cnt == 15
 
 
 def test_get_part_count_ceil():

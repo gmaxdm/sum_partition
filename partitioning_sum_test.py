@@ -96,8 +96,8 @@ def test_sum_partition_cnt():
 
 
 def test_calc_sum_partitions_count():
-    #cnt = calc_sum_partitions_count_by_diff(100, 101, 25337, 5)
-    #assert cnt == 26455
+    cnt = calc_sum_partitions_count_by_diff(100, 101, 25337, 5)
+    assert cnt == 26455
 
     cnt = calc_sum_partitions_count_by_diff(210, 250, 1, 20)
     assert cnt == 35251

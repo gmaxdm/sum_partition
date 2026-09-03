@@ -9,7 +9,7 @@ from partition_utils import (ap_sum, get_init_partition, get_term_interval,
                              get_partition_by_term_iteration_ap_min_last,
                              get_partition_by_term_iteration_ap_max_last,
                              get_tail_partition_iteration_cnt, get_min_part_last_term,
-                             is_valid)
+                             is_partition_valid)
 
 
 logger = logging.getLogger('partition')
@@ -63,6 +63,8 @@ def get_part_cnt(init_part: List[int], s: int, idx: int, last_term_limit: int = 
         ceil = s
 
     part = init_part
+    # to log correct init_part use:
+    # part = init_part[:]
     term_idx = n - 4
     # keep the left sum before term_idx
     left_part_sum = 0
@@ -124,9 +126,9 @@ def get_part_count(s: int, n: int, term_idx: int, iteration: int, ceil: int = 0)
 def get_part_count_ceil(s: int, n: int, iteration: int, ceil: int) -> int:
     """
     P(S, n, i, c) = P(S, n, i, c-1) + P(S-c+1,n-1,i,c-1)
-    term_idx = 0, it means we count all for the first term's iteration.
+    term_idx = 0, it means we count partitions for the iteration of the first term.
     """
-    if not is_valid(s, n, 0, iteration):
+    if not is_partition_valid(s, n, 0, iteration):
         return 0
 
     if ceil < n:

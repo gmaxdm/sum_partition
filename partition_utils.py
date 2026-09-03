@@ -9,7 +9,7 @@ def ap_sum(a: int, n: int) -> int:
     return (n * (2 * a + n - 1)) // 2
 
 
-def is_valid(s: int, n: int, term_idx: int, iteration: int) -> bool:
+def is_partition_valid(s: int, n: int, term_idx: int, iteration: int) -> bool:
     if s <= 0:
         return False
     if n < 2:
@@ -41,7 +41,7 @@ def get_tail_partition_iteration_cnt(s: int, left_part_sum: int, iteration: int,
     :return:
     """
     if last_term_limit < 0:
-        last_term_limit = 1 << 32
+        last_term_limit = s
 
     _s = s - left_part_sum - iteration
     # get the first partition for this iteration
