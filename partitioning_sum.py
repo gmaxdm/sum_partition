@@ -325,6 +325,9 @@ def calc_sum_partitions_count_by_diff(sum_from: int, sum_to: int, from_cnt: int,
         logger.info(f"P({sum_to}, {n}) = {cnt} (getting from cache)")
         return cnt
 
+    # explicitly closing mongo before forking
+    _mongo.close()
+
     _min_sum = ap_sum(1, n)
     cnt = from_cnt
     if sum_from < _min_sum:
@@ -333,6 +336,8 @@ def calc_sum_partitions_count_by_diff(sum_from: int, sum_to: int, from_cnt: int,
     with Pool(processes=multiprocessing.cpu_count(), initializer=get_client) as pool:
         for res in pool.starmap(get_partition_diff_by_term_cnt, [(_s, n) for _s in range(sum_from+1, sum_to+1)]):
             cnt += res
+
+    _mongo = get_client()
     _mongo.add_part(sum_to, n, 1, cnt)
     logger.info(f"P({sum_to}, {n}) = {cnt}")
     logger.info(f"cnt: {cnt}, fits 4 bytes size ({2**32}): {cnt < 2**32}")

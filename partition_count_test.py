@@ -225,7 +225,6 @@ def test_get_edge_partitions_by_term_iteration_cnt_play():
 def test_tmp():
     init_part = [1, 2, 3, 21]
     _cnt = 0
-    # count parts for term_idx = 0, iteration >= 3 where last term less than 13:
     _cnt3 = 0
     cnt = 0
     print()

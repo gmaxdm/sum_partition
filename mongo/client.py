@@ -15,6 +15,10 @@ class MongoAbstractDB(ABC):
         pass
 
     @abstractmethod
+    def close(self):
+        pass
+
+    @abstractmethod
     def get_part(self, s: int, n: int) -> int:
         return 0
 
@@ -49,6 +53,9 @@ class MongoAbstractDB(ABC):
 
 class MongoMockDB(MongoAbstractDB):
     def init_db(self):
+        pass
+
+    def close(self):
         pass
 
     def get_part(self, s: int, n: int) -> int:
@@ -103,6 +110,9 @@ class MongoDB(MongoAbstractDB):
         print(f"Created unique compound index: {idx}")
         idx = edge.create_index([("s", 1), ("n", 1), ("i", 1)], unique=True)
         print(f"Created unique compound index: {idx}")
+
+    def close(self):
+        self._client.close()
 
     def get_part(self, s: int, n: int) -> int:
         res = self._db.part.find_one({"s": s, "n": n})
