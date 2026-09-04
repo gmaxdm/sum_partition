@@ -215,3 +215,11 @@ def get_client() -> MongoDB | MongoMockDB:
         else:
             MongoClient = MongoDB()
     return MongoClient
+
+
+def close_client():
+    global MongoClient
+    if ENV == "DEV" or MongoClient is None:
+        return
+    MongoClient.close()
+    MongoClient = None

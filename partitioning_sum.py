@@ -16,15 +16,14 @@ import yaml
 from typing import List, Dict, Any
 from multiprocessing import Pool
 
-from mongo.client import get_client
+from mongo.client import get_client, close_client
 from partition_count import (get_part_count, gen_next_part,
                              gen_edge_partitions_by_term_iteration,
                              get_edge_partitions_by_term_iteration_cnt,
                              SmallLengthPartitionsStopIteration)
 from partition_utils import (ap_sum, get_ap_left_part_sum, get_term_interval,
                              get_init_partition, get_partitions_cnt_by_term_iteration)
-from compression_utils import (gen_ordered_numbers, compress_layer, gen_bytes, split_by_layers,
-                               print_layers_stat, NUM_LEN)
+from compression_utils import (gen_ordered_numbers, compress_layer, NUM_LEN)
 from utils import save_to_csv
 from bench import benchmark, BenchmarkTags
 from logger.logger import setup_logging
@@ -326,7 +325,7 @@ def calc_sum_partitions_count_by_diff(sum_from: int, sum_to: int, from_cnt: int,
         return cnt
 
     # explicitly closing mongo before forking
-    _mongo.close()
+    close_client()
 
     _min_sum = ap_sum(1, n)
     cnt = from_cnt
