@@ -9,7 +9,7 @@ from partition_utils import (ap_sum, get_init_partition, get_term_interval,
                              get_partition_by_term_iteration_ap_min_last,
                              get_partition_by_term_iteration_ap_max_last,
                              get_tail_partition_iteration_cnt, get_min_part_last_term,
-                             is_partition_valid)
+                             is_partition_valid, get_init_partition_ceil)
 
 
 logger = logging.getLogger('partition')
@@ -20,7 +20,7 @@ class SmallLengthPartitionsStopIteration(Exception):
 
 
 @BenchmarkTags(tags="PC")
-def get_part_cnt(init_part: List[int], s: int, idx: int, last_term_limit: int = 0) -> int:
+def _get_part_cnt(init_part: List[int], s: int, idx: int, last_term_limit: int = 0) -> int:
     """
     increment the most right term n-1 (before the result sum term - last),
     when the rule is failed increment n-2 by creating the min partition for this iteration
@@ -111,7 +111,7 @@ def get_part_cnt(init_part: List[int], s: int, idx: int, last_term_limit: int = 
     return cnt
 
 
-def get_part_count(s: int, n: int, term_idx: int, iteration: int, ceil: int = 0) -> int:
+def get_part_count(s: int, n: int, term_idx: int, iteration: int) -> int:
     """ returns all partitions for term_idx starting from iteration.
     """
     cnt = 0
@@ -120,10 +120,23 @@ def get_part_count(s: int, n: int, term_idx: int, iteration: int, ceil: int = 0)
     except ValueError:
         return cnt
 
-    return get_part_cnt(_init_part, s, term_idx, ceil)
+    return _get_part_cnt(_init_part, s, term_idx)
 
 
-def get_part_count_ceil(s: int, n: int, iteration: int, ceil: int) -> int:
+def get_part_count_ceil(s: int, n: int, term_idx: int, iteration: int, ceil: int) -> int:
+    """ returns all partitions for term_idx starting from iteration using ceil.
+    """
+    cnt = 0
+    try:
+        _init_part = get_init_partition_ceil(s, n, term_idx, iteration, ceil)
+        #_init_part = get_init_partition(s, n, term_idx, iteration)
+    except ValueError:
+        return cnt
+
+    return _get_part_cnt(_init_part, s, term_idx, ceil)
+
+
+def get_part_count_ceil_by_prev_ceil(s: int, n: int, iteration: int, ceil: int) -> int:
     """
     P(S, n, i, c) = P(S, n, i, c-1) + P(S-c+1,n-1,i,c-1)
     term_idx = 0, it means we count partitions for the iteration of the first term.
@@ -137,7 +150,7 @@ def get_part_count_ceil(s: int, n: int, iteration: int, ceil: int) -> int:
     _max_ceil = get_min_part_last_term(s, n, iteration)
 
     if ceil > _max_ceil:
-        return get_part_count(s, n, 0, iteration, 0)
+        return get_part_count(s, n, 0, iteration)
 
     _mongo = get_client()
 
@@ -146,8 +159,8 @@ def get_part_count_ceil(s: int, n: int, iteration: int, ceil: int) -> int:
         logger.info(f"P({s}, {n}, {iteration}, {ceil}) = {cnt} (getting from cache)")
         return cnt
 
-    _cnt = get_part_count(s, n, 0, iteration, ceil-1)
-    _cnt += get_part_count(s - ceil + 1, n-1, 0, iteration, ceil-1)
+    _cnt = get_part_count_ceil(s, n, 0, iteration, ceil-1)
+    _cnt += get_part_count_ceil(s - ceil + 1, n-1, 0, iteration, ceil-1)
 
     if _cnt:
         _mongo.add_part_ceil(s, n, iteration, ceil, _cnt)
@@ -364,9 +377,9 @@ def _get_edge_partitions_by_term_iteration_cnt(s: int, n: int, term_idx: int, it
         med = _sum // 2
         #__cnt = get_part_count_ceil(_s, middle_terms_cnt, iteration+1, med)
         #__cnt = get_part_count(_s, middle_terms_cnt, 0, iteration+1, med)
+        __cnt = get_part_count_ceil_by_prev_ceil(_s, middle_terms_cnt, iteration+1, med)
         #print(f"calc P({_s}, {middle_terms_cnt}, {iteration+1}, {med}) = {__cnt}")
-        #cnt += __cnt
-        cnt += get_part_count_ceil(_s, middle_terms_cnt, iteration+1, med)
+        cnt += __cnt
         #cnt += get_part_count(_s, middle_terms_cnt, 0, iteration+1, med)
         _sum -= 1
 

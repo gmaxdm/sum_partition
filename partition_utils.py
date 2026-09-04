@@ -83,8 +83,38 @@ def get_init_partition(s: int, n: int, term_idx: int, iteration: int) -> List[in
         _part[term_idx + i] = iteration + i
     _part[-1] = s - get_ap_left_part_sum(term_idx, iteration, n)
     if _part[-1] <= _part[-2]:
-        raise ValueError(f"can't create a new partition for term {term_idx} and iteration {iteration}")
+        raise ValueError(f"can't build an initial partition for P({s}, {n}, {term_idx}, {iteration})")
     return _part
+
+
+def get_init_partition_ceil(s: int, n: int, term_idx: int, iteration: int, ceil: int) -> List[int]:
+    """
+    Get the initial partition from which the generation can be started (using the method from min to max partitions).
+    Partitions with the last term greater than ceil are omitted.
+    For example, the initial partition for P(25, 5, 1, 9) is [1, 3, 6, 7, 8].
+    Let term_idx = 0 for now.
+    """
+    if not is_partition_valid(s, n, term_idx, iteration):
+        raise ValueError(f"can't build an initial partition for P({s}, {n}, {iteration}, {ceil})")
+
+    part = [0] * (n+1)
+    part[-1] = ceil
+    right_sum = 0
+    i = n - 1
+    while i != 0:
+        part[i] = part[i + 1]
+        ap = ap_sum(iteration, i)
+        _s = s - right_sum
+        while True:
+            part[i] -= 1
+            if ap + part[i] <= _s:
+                break
+        right_sum += part[i]
+        i -= 1
+    part[0] = s - right_sum
+    if part[0] >= part[1] or part[0] <= 0:
+        raise ValueError(f"can't build an initial partition for P({s}, {n}, {iteration}, {ceil}): {part}")
+    return part[:-1]
 
 
 def get_partition_by_term_iteration_max_last(s: int, n: int, term_idx: int, iteration: int) -> List[int]:

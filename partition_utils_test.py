@@ -3,7 +3,8 @@ import pytest
 from partition_utils import (get_ap_left_part_sum, get_init_partition, get_term_interval, get_min_part_last_term,
                              get_partitions_cnt_by_term_iteration, get_partition_by_term_iteration_ap_min_last,
                              get_partition_by_term_ap_max_last, get_partition_by_term_iteration_ap_min_first,
-                             get_tail_partition_iteration_cnt, get_partition_by_term_iteration_ap_max_last)
+                             get_tail_partition_iteration_cnt, get_partition_by_term_iteration_ap_max_last,
+                             get_init_partition_ceil)
 
 
 def test_get_ap_left_part_sum():
@@ -189,3 +190,16 @@ def test_get_min_part_last_term():
     _max_ceil = get_min_part_last_term(25, 5, 3)
     assert _max_ceil == 7
 
+
+def test_get_init_partition_ceil():
+    part = get_init_partition_ceil(25, 5, 0, 1, 9)
+    assert part == [1, 3, 6, 7, 8]
+
+    part = get_init_partition_ceil(25, 5, 0, 1, 12)
+    assert part == [1, 2, 3, 8, 11]
+
+    part = get_init_partition_ceil(10, 3, 0, 2, 12)
+    assert part == [2, 3, 5]
+
+    part = get_init_partition_ceil(287, 12, 0, 2, 31)
+    assert part == [12, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]
