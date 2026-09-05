@@ -3,5 +3,5 @@ MONGODB = {
     "port": 27017,
     "db": "sump",
 }
-ENV = "DEV"
+ENV = "PROD"
 CNT_MIN = 30
